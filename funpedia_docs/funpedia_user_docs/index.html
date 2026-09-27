@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Developer reference for the Funpedia Flutter user app.">
+  <meta name="theme-color" content="#f4f6ef">
+  <title>Funpedia User App | Developer Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c2924;
+      --muted: #617068;
+      --paper: #f4f6ef;
+      --surface: #fffefa;
+      --accent: #176b57;
+      --accent-dark: #104d40;
+      --coral: #d3654f;
+      --line: #d7ded3;
+      --code: #172824;
+      --rail: 282px;
+      --content: 900px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 28px; }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.68 "DM Sans", sans-serif;
+    }
+    button, input { font: inherit; }
+    a { color: var(--accent); }
+    .layout { min-height: 100vh; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 5;
+      display: flex;
+      width: var(--rail);
+      flex-direction: column;
+      padding: 24px 18px 18px;
+      border-right: 1px solid var(--line);
+      background: #eef2e9;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 3px 8px 22px;
+      border-bottom: 1px solid var(--line);
+      color: inherit;
+      text-decoration: none;
+    }
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 11px;
+      color: white;
+      background: var(--accent);
+      font: 700 18px/1 "Fraunces", serif;
+    }
+    .brand-name { display: block; font-size: 15px; font-weight: 700; line-height: 1.15; }
+    .brand-subtitle { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .sidebar-label {
+      margin: 22px 8px 9px;
+      color: #77837b;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+    .search-wrap { position: relative; margin: 17px 2px 0; }
+    .search-wrap svg { position: absolute; top: 11px; left: 11px; width: 15px; color: #7a867e; }
+    #search {
+      width: 100%;
+      height: 38px;
+      padding: 0 36px 0 34px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      outline: 0;
+      color: var(--ink);
+      background: var(--surface);
+      font-size: 12px;
+    }
+    #search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #176b571c; }
+    .search-shortcut {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      padding: 1px 5px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: #77837b;
+      font: 10px "DM Mono", monospace;
+    }
+    #toc { overflow: auto; padding: 0 2px 12px; scrollbar-width: thin; }
+    .toc-link {
+      display: block;
+      margin: 2px 0;
+      padding: 7px 9px;
+      border-radius: 6px;
+      color: #4f5e56;
+      font-size: 12px;
+      line-height: 1.35;
+      text-decoration: none;
+    }
+    .toc-link[data-level="3"] { padding-left: 20px; color: #68766e; font-size: 11px; }
+    .toc-link:hover, .toc-link.active { color: var(--accent-dark); background: #dfe9dc; }
+    .toc-link[hidden] { display: none; }
+    .sidebar-foot {
+      margin-top: auto;
+      padding: 14px 8px 2px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .sidebar-foot a { text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .main { min-width: 0; margin-left: var(--rail); }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      display: flex;
+      min-height: 56px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 38px;
+      border-bottom: 1px solid #d7ded3cf;
+      background: #f4f6efe8;
+      backdrop-filter: blur(14px);
+    }
+    .crumbs { color: var(--muted); font-size: 11px; }
+    .crumbs strong { color: var(--ink); font-weight: 600; }
+    .top-actions { display: flex; gap: 8px; }
+    .icon-button {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: #43554b;
+      background: var(--surface);
+      cursor: pointer;
+    }
+    .icon-button:hover { color: var(--accent-dark); border-color: #9eb8a7; }
+    .icon-button svg { width: 16px; height: 16px; }
+    .content { width: min(var(--content), 100%); margin: 0 auto; padding: 36px 48px 96px; }
+    .loading, .error {
+      margin-top: 60px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+    .error { border-left: 4px solid var(--coral); }
+    .error a { font-weight: 700; }
+    #document > h1:first-child {
+      margin: 0 0 14px;
+      font: 700 43px/1.12 "Fraunces", Georgia, serif;
+      letter-spacing: 0;
+    }
+    #document > h1:first-child + p { max-width: 720px; color: var(--muted); font-size: 16px; }
+    #document h2 {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin: 64px 0 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      font: 700 29px/1.2 "Fraunces", Georgia, serif;
+      letter-spacing: 0;
+      scroll-margin-top: 82px;
+    }
+    #document h3 {
+      margin: 32px 0 12px;
+      font: 700 19px/1.35 "DM Sans", sans-serif;
+      letter-spacing: 0;
+      scroll-margin-top: 82px;
+    }
+    #document h4 {
+      margin: 12px 0 0;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px 8px 0 0;
+      color: #204f41;
+      background: #f1f5ee;
+      font: 500 13px/1.5 "DM Mono", monospace;
+      overflow-wrap: anywhere;
+      scroll-margin-top: 82px;
+    }
+    #document h4 + p { margin: 0; padding: 13px 16px 0; border-right: 1px solid var(--line); border-left: 1px solid var(--line); background: var(--surface); }
+    #document h4 + p + p { margin: 0; padding: 8px 16px 0; border-right: 1px solid var(--line); border-left: 1px solid var(--line); background: var(--surface); }
+    #document h4 + p + p + p { margin: 0; padding: 8px 16px 15px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 8px 8px; background: var(--surface); }
+    .api-entry, .api-body { min-width: 0; max-width: 100%; }
+    .api-entry { overflow: hidden; margin: 11px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+    .api-entry > summary { padding: 13px 16px; color: #204f41; background: #f1f5ee; font: 500 12px/1.55 "DM Mono", monospace; cursor: pointer; overflow-wrap: anywhere; word-break: normal; }
+    .api-entry > summary:hover { background: #e8efe5; }
+    .api-entry[open] > summary { border-bottom: 1px solid var(--line); }
+    .api-body { padding: 1px 16px 13px; }
+    .api-body > * { min-width: 0; max-width: 100%; }
+    .api-body > p { margin: 12px 0; }
+    .api-body > pre { margin: 12px 0; }
+    #document p { margin: 11px 0 15px; }
+    #document ul, #document ol { padding-left: 22px; }
+    #document li { margin: 5px 0; padding-left: 3px; }
+    #document blockquote { margin: 18px 0; padding: 4px 18px; border-left: 3px solid var(--coral); color: var(--muted); }
+    #document code, .crumbs code {
+      padding: 2px 5px;
+      border: 1px solid #e0e5dc;
+      border-radius: 4px;
+      color: #315747;
+      background: #edf1e9;
+      font: 12px "DM Mono", monospace;
+      overflow-wrap: anywhere;
+    }
+    #document pre {
+      overflow: auto;
+      margin: 14px 0 22px;
+      padding: 18px;
+      border: 1px solid #263d35;
+      border-radius: 8px;
+      color: #edf4eb;
+      background: var(--code);
+      line-height: 1.6;
+      tab-size: 2;
+    }
+    #document pre code { padding: 0; border: 0; color: inherit; background: none; font-size: 12px; overflow-wrap: normal; }
+    #document table { width: 100%; margin: 16px 0; border-collapse: collapse; font-size: 13px; }
+    #document th, #document td { padding: 9px 11px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    #document th { background: #edf2e9; }
+    #document hr { margin: 38px 0; border: 0; border-top: 1px solid var(--line); }
+    .api-tools { display: none; gap: 8px; margin: 20px 0 8px; }
+    body.has-api .api-tools { display: flex; }
+    .small-button {
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: #43554b;
+      background: var(--surface);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .small-button:hover { border-color: #9eb8a7; color: var(--accent-dark); }
+    .search-empty { display: none; padding: 24px 0; color: var(--muted); }
+    .search-empty.visible { display: block; }
+    .mobile-menu { display: none; }
+    .shade { display: none; }
+    body.ready #document > * { animation: enter .34s both; }
+    body.ready #document > *:nth-child(2) { animation-delay: .035s; }
+    body.ready #document > *:nth-child(3) { animation-delay: .07s; }
+    @keyframes enter { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 900px) {
+      :root { --rail: 250px; }
+      .content { padding: 30px 32px 76px; }
+      .topbar { padding: 0 28px; }
+    }
+    @media (max-width: 700px) {
+      .sidebar { width: min(84vw, 310px); transform: translateX(-102%); transition: transform .22s ease; box-shadow: 16px 0 40px #17282420; }
+      body.menu-open .sidebar { transform: translateX(0); }
+      .shade { position: fixed; inset: 0; z-index: 4; background: #1728245c; }
+      body.menu-open .shade { display: block; }
+      .main { margin-left: 0; }
+      .topbar { min-height: 52px; padding: 0 16px; }
+      .mobile-menu { display: grid; }
+      .content { padding: 28px 20px 64px; }
+      #document > h1:first-child { font-size: 35px; }
+      #document h2 { margin-top: 48px; font-size: 25px; }
+      #document h3 { font-size: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="shade" id="shade" aria-hidden="true"></div>
+    <aside class="sidebar" aria-label="Documentation navigation">
+      <a class="brand" href="#top" aria-label="Funpedia developer reference home">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span><span class="brand-name">Funpedia</span><span class="brand-subtitle">Flutter developer reference</span></span>
+      </a>
+      <label class="search-wrap" for="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+        <input id="search" type="search" placeholder="Search this reference" autocomplete="off">
+        <span class="search-shortcut" aria-hidden="true">/</span>
+      </label>
+      <p class="sidebar-label">On this page</p>
+      <nav id="toc" aria-label="Table of contents"></nav>
+      <div class="sidebar-foot">Generated from <a href="./README.md">README.md</a></div>
+    </aside>
+
+    <main class="main" id="top">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="menu-toggle" type="button" aria-label="Open navigation" title="Open navigation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+        </button>
+        <div class="crumbs">Funpedia <span aria-hidden="true">/</span> <strong>Developer reference</strong></div>
+        <div class="top-actions">
+          <button class="icon-button" id="expand-toggle" type="button" aria-label="Expand all API entries" title="Expand all API entries">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m7 10 5-5 5 5M7 14l5 5 5-5"></path></svg>
+          </button>
+          <button class="icon-button" id="source-link" type="button" aria-label="Open Markdown source" title="Open Markdown source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3h7v7M10 14 21 3"></path><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"></path></svg>
+          </button>
+        </div>
+      </header>
+      <div class="content">
+        <div class="api-tools" aria-label="API reference controls">
+          <button class="small-button" id="open-api" type="button">Expand all API entries</button>
+          <button class="small-button" id="close-api" type="button">Collapse all API entries</button>
+        </div>
+        <article id="document" aria-live="polite">
+          <!-- DOCS_CONTENT_START -->
+<h1>Funpedia User App: Developer Reference</h1>
+<p>This reference documents the Flutter application in <code>../../funpedia_user</code> as it currently exists. API entries come first and use a consistent lookup pattern: symbol and arguments, purpose, then example. The page guide follows the API reference. Placeholder behavior and unused metadata are called out rather than described as finished features.</p>
+<h2>Standalone Documentation Page</h2>
+<p><code>index.html</code> is generated from this Markdown file and can be opened directly in a browser with no local server. After editing this file, regenerate the page from this directory:</p>
+<pre><code class="language-sh">npm install
+npm run build
+</code></pre>
+<p>The Markdown remains the content source; the generated HTML contains a snapshot of it for <code>file://</code> compatibility. The generator dependency is used only while building and is not loaded by the page at runtime.</p>
+<h2>Start Here</h2>
+<p>Run from the Flutter project directory (<code>../../funpedia_user</code>):</p>
+<pre><code class="language-sh">flutter pub get
+flutter run
+</code></pre>
+<p>Useful checks:</p>
+<pre><code class="language-sh">flutter analyze
+flutter test test/subject_tone_test.dart
+</code></pre>
+<p>The SDK constraint and package versions are in <a href="../../funpedia_user/pubspec.yaml"><code>pubspec.yaml</code></a>. Runtime dependencies used by the app include Flutter, <code>google_fonts</code>, and <code>audioplayers</code>.</p>
+<h2>Source Map</h2>
+<pre><code class="language-text">funpedia_user/
+  lib/
+    main.dart
+    features/home/
+      audio/subject_audio.dart
+      domain/musical_note.dart
+      domain/subject_definition.dart
+      domain/subject_jingles.dart
+      presentation/home_page.dart
+      presentation/subject_menu_page.dart.dart
+      widgets/back_button.dart
+      widgets/subject_card.dart
+  test/
+    subject_tone_test.dart
+    widget_test.dart
+</code></pre>
+<p><code>lib/app/</code> and <code>lib/core/</code> currently contain no Dart source files. The feature uses <code>domain/</code> for data, <code>widgets/</code> for reusable controls, <code>presentation/</code> for pages, and <code>audio/</code> for generated sound.</p>
+<h2>API Reference</h2>
+<h3>App Bootstrap</h3>
+<h4><code>main()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Starts Flutter with <code>MyApp</code> as the root widget.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">void main() {
+  runApp(const MyApp());
+}
+</code></pre>
+<h4><code>MyApp({Key? key})</code></h4>
+<p><strong>Arguments:</strong> optional widget <code>key</code>.<br><strong>Purpose:</strong> Builds the app-level <code>MaterialApp</code>, theme, and initial <code>HomePage</code>. The current title values are still the Flutter starter labels.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">const MyApp()
+</code></pre>
+<h4><code>MyApp.build(BuildContext context)</code></h4>
+<p><strong>Arguments:</strong> <code>context</code>, the widget&#39;s build context.<br><strong>Purpose:</strong> Returns a <code>MaterialApp</code> using a seeded <code>ThemeData</code> and <code>HomePage</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">MaterialApp(
+  title: &#39;Flutter Demo&#39;,
+  home: const HomePage(title: &#39;Flutter Demo Home Page&#39;),
+)
+</code></pre>
+<h4><code>contrastingColor(Color background)</code></h4>
+<p><strong>Arguments:</strong> <code>background</code>, the color to evaluate.<br><strong>Purpose:</strong> Returns white for a dark background and black otherwise, using Flutter&#39;s estimated brightness. This top-level helper is not currently called elsewhere in the app.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final labelColor = contrastingColor(subject.color);
+</code></pre>
+<h3>Domain Types</h3>
+<h4><code>MusicalNote(String name, double frequency)</code></h4>
+<p><strong>Arguments:</strong> <code>name</code>, readable pitch label; <code>frequency</code>, pitch in hertz.<br><strong>Purpose:</strong> Immutable value object used by the note catalog, subject definitions, and audio synthesis.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">const note = MusicalNote(&#39;C4&#39;, 261.63);
+</code></pre>
+<h4><code>MusicalNote.toString()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Returns the note&#39;s readable <code>name</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">print(Note.c4); // C4
+</code></pre>
+<h4><code>Note</code> constants</h4>
+<p><strong>Arguments:</strong> none; constants are referenced by name.<br><strong>Purpose:</strong> Predefined <code>MusicalNote</code> values from <code>Note.b2</code> through <code>Note.d6</code>, including sharp and flat spellings where defined. Use these constants instead of repeating frequency literals.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">const melody = &lt;MusicalNote&gt;[Note.c4, Note.e4, Note.g4, Note.c5];
+</code></pre>
+<h4><code>SubjectDefinition({...})</code></h4>
+<p><strong>Arguments:</strong> required named fields <code>index</code> (<code>int</code>), <code>name</code> (<code>String</code>), <code>color</code> (<code>Color</code>), <code>icon</code> (<code>IconData</code>), <code>routeName</code> (<code>String</code>), <code>pressJingle</code> (<code>List&lt;MusicalNote&gt;</code>), and <code>hoverTone</code> (<code>MusicalNote</code>).<br><strong>Purpose:</strong> Immutable metadata for a home-page subject card. <code>index</code> controls ordering and alternating layout; <code>routeName</code> is passed to <code>SubMenu</code> but not currently used for navigation. Current card playback looks up the motif in <code>SubjectJingles</code> by subject name instead of reading this object&#39;s <code>pressJingle</code> field.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">const subject = SubjectDefinition(
+  index: 0,
+  name: &#39;History&#39;,
+  color: Color(0xFF8D6E63),
+  icon: Icons.account_balance,
+  routeName: &#39;history&#39;,
+  pressJingle: [Note.d3, Note.a3, Note.fs3, Note.d4],
+  hoverTone: Note.d3,
+);
+</code></pre>
+<h3>Subject Motifs</h3>
+<h4><code>SubjectJingles.all</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Static catalog of 17 four-note candidate motifs. The subject mapping below selects entries by index.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final candidate = SubjectJingles.all.first;
+</code></pre>
+<h4><code>SubjectJingles.forSubject(String subject)</code></h4>
+<p><strong>Arguments:</strong> <code>subject</code>, the exact subject display name.<br><strong>Purpose:</strong> Returns the mapped motif. Unknown names fall back to <code>all[0]</code>; callers should use one of the names defined on <code>HomePage</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final motif = SubjectJingles.forSubject(&#39;Physics&#39;);
+</code></pre>
+<h3>Home Page Widget</h3>
+<h4><code>HomePage({Key? key, required String title})</code></h4>
+<p><strong>Arguments:</strong> optional <code>key</code>; required <code>title</code>.<br><strong>Purpose:</strong> Declares the root subject-browser page. The current build does not render <code>title</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">const HomePage(title: &#39;Funpedia&#39;)
+</code></pre>
+<h4><code>HomePage.createState()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Creates <code>_HomePageState</code>, which owns the subject list and <code>PageController</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">@override
+State&lt;HomePage&gt; createState() =&gt; _HomePageState();
+</code></pre>
+<h4><code>_HomePageState.subjects</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Static constant list of the eleven subject definitions shown on the home page. It is the source for card order and the portrait/landscape layouts.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">static const subjects = &lt;SubjectDefinition&gt;[
+  SubjectDefinition(
+    index: 0,
+    name: &#39;History&#39;,
+    color: Color(0xFF8D6E63),
+    icon: Icons.account_balance,
+    routeName: &#39;history&#39;,
+    pressJingle: [Note.d3, Note.a3, Note.fs3, Note.d4],
+    hoverTone: Note.d3,
+  ),
+];
+</code></pre>
+<h4><code>_HomePageState.currentPage</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Mutable integer initialized to <code>subjects.length * 10000</code>. It is not currently read or updated by the page.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">int currentPage = subjects.length * 10000;
+</code></pre>
+<h4><code>_HomePageState._pageController</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Lazily creates a <code>PageController</code> with the same large initial page and disposes it with the state. No current <code>PageView</code> uses it.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">late final controller = PageController(initialPage: subjects.length * 10000);
+</code></pre>
+<h4><code>_HomePageState.isWideScreen</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Returns whether the available media height is less than its width. <code>build</code> independently computes the same condition for its local layout choice.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">if (isWideScreen) {
+  // Use the two-column subject layout.
+}
+</code></pre>
+<h4><code>_HomePageState.dispose()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Disposes the page controller before the state is removed.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">@override
+void dispose() {
+  _pageController.dispose();
+  super.dispose();
+}
+</code></pre>
+<h4><code>_HomePageState.build(BuildContext context)</code></h4>
+<p><strong>Arguments:</strong> <code>context</code>, used to read the available size.<br><strong>Purpose:</strong> Builds a <code>Scaffold</code> with a scrollable header and subject cards. Landscape uses two parity-based columns; portrait uses one list.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final isWide = MediaQuery.sizeOf(context).height &lt;
+    MediaQuery.sizeOf(context).width;
+</code></pre>
+<h4><code>_HomePageState._buildHeader()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Builds the multicolor Funpedia wordmark and learning prompt.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">SelectionArea(child: _buildHeader())
+</code></pre>
+<h4><code>_HomePageState._buildSubjectCard(BuildContext context, SubjectDefinition subject)</code></h4>
+<p><strong>Arguments:</strong> <code>context</code>; <code>subject</code>, the metadata passed to the reusable card.<br><strong>Purpose:</strong> Adapts home-page subject data to <code>SubjectCard</code>, including the current wide-layout flag.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">_buildSubjectCard(context, subject)
+</code></pre>
+<h4><code>_HomePageState._buildSubjectColumn(BuildContext context, int columnIndex)</code></h4>
+<p><strong>Arguments:</strong> <code>context</code>; <code>columnIndex</code>, either <code>0</code> or <code>1</code>.<br><strong>Purpose:</strong> Builds one landscape column from subjects whose index parity matches the requested column.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">_buildSubjectColumn(context, 0)
+</code></pre>
+<h3>Subject Card Widget</h3>
+<h4><code>SubjectCard({Key? key, required BuildContext context, required SubjectDefinition subject, required bool isWideScreen})</code></h4>
+<p><strong>Arguments:</strong> optional <code>key</code>; required <code>context</code>, <code>subject</code>, and <code>isWideScreen</code>. The widget stores a <code>BuildContext</code> field, although navigation in <code>build</code> uses its build-time context.<br><strong>Purpose:</strong> Displays one subject and owns hover/press interaction, audio playback, clipping, and navigation.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">SubjectCard(
+  context: context,
+  subject: subject,
+  isWideScreen: isWideScreen,
+)
+</code></pre>
+<h4><code>SubjectCard.createState()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Creates <code>_SubjectCardState</code>, which owns pointer flags, the selected motif, hover timer, and audio service.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">@override
+State&lt;SubjectCard&gt; createState() =&gt; _SubjectCardState();
+</code></pre>
+<h4><code>_SubjectCardState._playHoverTone()</code></h4>
+<p><strong>Arguments:</strong> none; reads <code>widget.subject.hoverTone</code>.<br><strong>Purpose:</strong> Debounces pointer-enter audio by 90 ms, then plays the subject&#39;s hover note.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">onEnter: (_) {
+  setState(() =&gt; _isHovered = true);
+  _playHoverTone();
+}
+</code></pre>
+<h4><code>_SubjectCardState._playPressJingle()</code></h4>
+<p><strong>Arguments:</strong> none; reads <code>widget.subject.name</code>.<br><strong>Purpose:</strong> Looks up and stores the subject motif from <code>SubjectJingles</code>, then starts playback. This runs on pointer-down, before the button&#39;s <code>onPressed</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">_selectedJingle = SubjectJingles.forSubject(widget.subject.name);
+_audioPlayer.playMelody(_selectedJingle!);
+</code></pre>
+<h4><code>_SubjectCardState.dispose()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Cancels a pending hover timer, asynchronously disposes the audio service, then disposes the widget state.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">@override
+void dispose() {
+  _hoverDebounce?.cancel();
+  unawaited(_audioPlayer.dispose());
+  super.dispose();
+}
+</code></pre>
+<h4><code>_SubjectCardState.build(BuildContext context)</code></h4>
+<p><strong>Arguments:</strong> <code>context</code>, used for theme access and route navigation.<br><strong>Purpose:</strong> Composes pointer handling, scale animation, a responsive custom clipper, and an <code>ElevatedButton</code>. Tapping pushes <code>SubMenu</code> with a right-to-left slide transition.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">Navigator.of(context).push(
+  PageRouteBuilder&lt;void&gt;(
+    pageBuilder: (context, animation, secondaryAnimation) =&gt; nextPage,
+  ),
+);
+</code></pre>
+<h4><code>_TrapezoidClipper({required bool taperRight})</code></h4>
+<p><strong>Arguments:</strong> <code>taperRight</code>, selects the slant direction for portrait cards.<br><strong>Purpose:</strong> Defines the portrait-card path; edge inset and corner radius are 12 and 16 logical pixels.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">const _TrapezoidClipper(taperRight: true)
+</code></pre>
+<h4><code>_TrapezoidClipper.getClip(Size size)</code></h4>
+<p><strong>Arguments:</strong> <code>size</code>, the card&#39;s layout size.<br><strong>Purpose:</strong> Returns a rounded trapezoid path with the selected taper.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final path = clipper.getClip(const Size(320, 120));
+</code></pre>
+<h4><code>_TrapezoidClipper.shouldReclip(_TrapezoidClipper oldClipper)</code></h4>
+<p><strong>Arguments:</strong> <code>oldClipper</code>, the previous clipper.<br><strong>Purpose:</strong> Requests a new clip only when <code>taperRight</code> changes.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">return oldClipper.taperRight != taperRight;
+</code></pre>
+<h4><code>_WideParallelogramClipper({required bool droopRight})</code></h4>
+<p><strong>Arguments:</strong> <code>droopRight</code>, selects which side of the wide card slopes downward.<br><strong>Purpose:</strong> Defines the landscape-card path with a 16 logical-pixel lift and corner radius.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">const _WideParallelogramClipper(droopRight: false)
+</code></pre>
+<h4><code>_WideParallelogramClipper.getClip(Size size)</code></h4>
+<p><strong>Arguments:</strong> <code>size</code>, the card&#39;s layout size.<br><strong>Purpose:</strong> Returns a rounded parallelogram path based on <code>droopRight</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final path = clipper.getClip(const Size(420, 140));
+</code></pre>
+<h4><code>_WideParallelogramClipper.shouldReclip(_WideParallelogramClipper oldClipper)</code></h4>
+<p><strong>Arguments:</strong> <code>oldClipper</code>, the previous clipper.<br><strong>Purpose:</strong> Requests a new clip only when <code>droopRight</code> changes.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">return oldClipper.droopRight != droopRight;
+</code></pre>
+<h3>Back Button Widget</h3>
+<h4><code>CustomBackButton({Key? key, required bool isWideScreen, required Color color, required List&lt;MusicalNote&gt; pressJingle})</code></h4>
+<p><strong>Arguments:</strong> optional <code>key</code>; <code>isWideScreen</code> controls dimensions; <code>color</code> sets the surface; <code>pressJingle</code> is played in reverse.<br><strong>Purpose:</strong> Builds the submenu&#39;s custom animated back control.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">CustomBackButton(
+  isWideScreen: isWideScreen,
+  color: widget.color,
+  pressJingle: widget.pressJingle,
+)
+</code></pre>
+<h4><code>CustomBackButton.createState()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Creates state for hover/press visuals, navigation guard, and audio service.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">@override
+State&lt;CustomBackButton&gt; createState() =&gt; _BackButtonState();
+</code></pre>
+<h4><code>_BackButtonState._playReverseJingle()</code></h4>
+<p><strong>Arguments:</strong> none; reads <code>widget.pressJingle</code>.<br><strong>Purpose:</strong> Plays the incoming subject motif in reverse.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">_audioPlayer.playMelody(widget.pressJingle, reverse: true);
+</code></pre>
+<h4><code>_BackButtonState.dispose()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Asynchronously disposes the audio service, then the state.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">@override
+void dispose() {
+  unawaited(_audioPlayer.dispose());
+  super.dispose();
+}
+</code></pre>
+<h4><code>_BackButtonState.build(BuildContext context)</code></h4>
+<p><strong>Arguments:</strong> <code>context</code>, used to pop the current route.<br><strong>Purpose:</strong> Builds the hover/press animated control. Tap plays the reverse motif and calls <code>Navigator.pop</code>; <code>_isNavigating</code> prevents repeat pops.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">if (!_isNavigating) {
+  _isNavigating = true;
+  _playReverseJingle();
+  Navigator.pop(context);
+}
+</code></pre>
+<h3>Subject Menu Widget</h3>
+<h4><code>SubMenu({Key? key, required String subject, required String routeName, required Color color, required IconData icon, required List&lt;MusicalNote&gt; pressJingle})</code></h4>
+<p><strong>Arguments:</strong> optional <code>key</code>; subject display name; <code>routeName</code> metadata; subject <code>color</code> and <code>icon</code>; <code>pressJingle</code> for the reverse sound.<br><strong>Purpose:</strong> Declares the subject detail menu page. <code>routeName</code> is currently not read by the page.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">SubMenu(
+  subject: subject.name,
+  routeName: subject.routeName,
+  color: subject.color,
+  icon: subject.icon,
+  pressJingle: motif,
+)
+</code></pre>
+<h4><code>SubMenu.topicsBySubject</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Static map from exact subject name to visible topic labels. Earth Science currently has eight labels; other subjects have four each.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final historyTopics = SubMenu.topicsBySubject[&#39;History&#39;] ?? const &lt;String&gt;[];
+</code></pre>
+<h4><code>SubMenu.createState()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Creates <code>_SubMenuState</code> for page composition.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">@override
+State&lt;SubMenu&gt; createState() =&gt; _SubMenuState();
+</code></pre>
+<h4><code>_SubMenuState.build(BuildContext context)</code></h4>
+<p><strong>Arguments:</strong> <code>context</code>, used to read dimensions and theme.<br><strong>Purpose:</strong> Builds the colored subject header, custom back button, and responsive topic grid. Unknown subject names produce an empty topic list. Topic-card <code>onTap</code> callbacks are currently empty.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final topics = SubMenu.topicsBySubject[widget.subject] ?? const &lt;String&gt;[];
+</code></pre>
+<h3>Audio Service</h3>
+<h4><code>SubjectAudioPlayer()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Creates a lightweight service. Each playback method creates its own <code>AudioPlayer</code> and disposes it after completion.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final audio = SubjectAudioPlayer();
+</code></pre>
+<h4><code>SubjectAudioPlayer.playNote(MusicalNote note)</code></h4>
+<p><strong>Arguments:</strong> <code>note</code>, the pitch to synthesize.<br><strong>Purpose:</strong> Generates and plays one short kalimba-like note at the note volume.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">audio.playNote(Note.c4);
+</code></pre>
+<h4><code>SubjectAudioPlayer.playHoverNote(MusicalNote note)</code></h4>
+<p><strong>Arguments:</strong> <code>note</code>, normally the subject&#39;s hover pitch.<br><strong>Purpose:</strong> Generates and plays one hover sample using the shared UI audio context.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">audio.playHoverNote(subject.hoverTone);
+</code></pre>
+<h4><code>SubjectAudioPlayer._playHoverSample(AudioPlayer player, List&lt;double&gt; samples)</code></h4>
+<p><strong>Arguments:</strong> <code>player</code>, one-shot player; <code>samples</code>, normalized mono samples.<br><strong>Purpose:</strong> Sets hover volume, encodes samples as WAV, waits for completion, then disposes the player in <code>finally</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">await _playHoverSample(player, samples);
+</code></pre>
+<h4><code>SubjectAudioPlayer.playMelody(Iterable&lt;MusicalNote&gt; notes, {bool reverse = false})</code></h4>
+<p><strong>Arguments:</strong> <code>notes</code>, pitches to synthesize; optional <code>reverse</code>, which plays the sequence backwards. Empty sequences return without playing.<br><strong>Purpose:</strong> Mixes overlapping note samples into one buffer, smooths it, and plays the result. Notes start 110 ms apart and last 220 ms.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">audio.playMelody(SubjectJingles.forSubject(&#39;Physics&#39;));
+audio.playMelody(SubjectJingles.forSubject(&#39;Physics&#39;), reverse: true);
+</code></pre>
+<h4><code>SubjectAudioPlayer._smoothMelody(List&lt;double&gt; samples)</code></h4>
+<p><strong>Arguments:</strong> <code>samples</code>, the mixed melody buffer.<br><strong>Purpose:</strong> Applies a one-pole smoothing filter with a 0.22 coefficient. Empty input is returned unchanged.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final smoothed = _smoothMelody(mixedSamples);
+</code></pre>
+<h4><code>SubjectAudioPlayer._playOneShot(AudioPlayer player, List&lt;double&gt; samples, {required double volume})</code></h4>
+<p><strong>Arguments:</strong> <code>player</code>; <code>samples</code>; required <code>volume</code>.<br><strong>Purpose:</strong> Encodes a buffer, plays it, waits for completion, and disposes the player in <code>finally</code>.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">await _playOneShot(player, samples, volume: _melodyVolume);
+</code></pre>
+<h4><code>SubjectAudioPlayer._synthesizeKalimbaNote(double frequency)</code></h4>
+<p><strong>Arguments:</strong> <code>frequency</code>, pitch in hertz.<br><strong>Purpose:</strong> Produces 240 ms of mono samples using a fundamental tone, quiet harmonics, and attack/decay/release envelopes at 44.1 kHz.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final samples = _synthesizeKalimbaNote(Note.c4.frequency);
+</code></pre>
+<h4><code>SubjectAudioPlayer._buildWaveBytes(List&lt;double&gt; samples)</code></h4>
+<p><strong>Arguments:</strong> normalized mono <code>samples</code>.<br><strong>Purpose:</strong> Writes a little-endian, mono, 16-bit PCM WAV buffer at 44.1 kHz and adds 24 ms of silence at both ends.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">final bytes = _buildWaveBytes(samples);
+await player.play(BytesSource(bytes));
+</code></pre>
+<h4><code>SubjectAudioPlayer._isSupported</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Returns true for Android, iOS, Linux, Windows, and macOS. Playback entry points return early on other platforms. The <code>dart:io</code> dependency means web needs a conditional implementation before it can be supported.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">if (!_isSupported) return;
+</code></pre>
+<h4><code>SubjectAudioPlayer._ascii(String value)</code></h4>
+<p><strong>Arguments:</strong> <code>value</code>, an ASCII chunk for a WAV header.<br><strong>Purpose:</strong> Returns the string&#39;s code units as bytes.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">buffer.add(_ascii(&#39;RIFF&#39;));
+</code></pre>
+<h4><code>SubjectAudioPlayer._int16(int value)</code></h4>
+<p><strong>Arguments:</strong> signed integer value.<br><strong>Purpose:</strong> Encodes the low 16 bits as two little-endian bytes for the WAV header or sample data.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">buffer.add(_int16(bitsPerSample));
+</code></pre>
+<h4><code>SubjectAudioPlayer._int32(int value)</code></h4>
+<p><strong>Arguments:</strong> integer value.<br><strong>Purpose:</strong> Encodes 32 bits as four little-endian bytes for WAV sizes and sample rate.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">buffer.add(_int32(sampleRate));
+</code></pre>
+<h4><code>SubjectAudioPlayer.dispose()</code></h4>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Returns a completed future; the service holds no persistent player to release. One-shot routines dispose their own players when playback completes.<br><strong>Example:</strong></p>
+<pre><code class="language-dart">await audio.dispose();
+</code></pre>
+<h2>Pages</h2>
+<h3>Home Page</h3>
+<p><strong>Implementation:</strong> <a href="../../funpedia_user/lib/features/home/presentation/home_page.dart"><code>home_page.dart</code></a><br><strong>Widget:</strong> <code>HomePage</code><br><strong>State owner:</strong> <code>_HomePageState</code></p>
+<p>The home page defines eleven subjects in <code>_HomePageState.subjects</code>. Portrait uses one vertically scrolling list. Landscape distributes even indices to the first column and odd indices to the second. The breakpoint is orientation-based (<code>height &lt; width</code>), not a fixed pixel width.</p>
+<p>Each <code>SubjectDefinition</code> supplies the card label, icon, color, index, route metadata, stored jingle, and hover note. <code>SubjectCard</code> uses the name to look up the played motif in <code>SubjectJingles</code>; <code>SubjectDefinition.pressJingle</code> is currently not authoritative. When a card is activated, the looked-up motif is passed to <code>SubMenu</code> so the back button can reverse the same sequence.</p>
+<p><strong>Interaction flow:</strong> pointer enters card -&gt; 90 ms debounce -&gt; hover note; pointer down -&gt; press motif; button activation -&gt; push <code>SubMenu</code> with a 300 ms forward slide; back tap -&gt; reverse motif and pop route.</p>
+<h3>Subject Menu Page</h3>
+<p><strong>Implementation:</strong> <a href="../../funpedia_user/lib/features/home/presentation/subject_menu_page.dart.dart"><code>subject_menu_page.dart.dart</code></a><br><strong>Widget:</strong> <code>SubMenu</code><br><strong>State owner:</strong> <code>_SubMenuState</code></p>
+<p>The menu header uses the subject color and icon. A <code>LayoutBuilder</code> chooses two to six topic columns by available width: below 600 px gives two columns, then three below 900, four below 1200, five below 1600, and six at or above 1600. The back button is excluded from selection; topic labels remain selectable.</p>
+<p>Topic cards currently have empty <code>onTap</code> handlers. <code>routeName</code> is not consumed by the page, so there is no topic detail route yet. Unknown subject keys render no topics.</p>
+<h2>Audio And Motif Notes</h2>
+<ul>
+<li>Samples are mono 16-bit PCM WAV at 44.1 kHz.</li>
+<li>Note synthesis uses a fundamental plus two quiet harmonics and an amplitude envelope.</li>
+<li>Melody notes begin every 110 ms and last 220 ms, creating overlap.</li>
+<li><code>playMelody(..., reverse: true)</code> reverses note order; it does not reverse the sample waveform.</li>
+<li>Each sound gets a separate one-shot player. Android/iOS use an audio context configured to mix with other audio.</li>
+<li>Configured volumes are currently <code>1.5</code>; <code>audioplayers</code> generally documents volume as a 0.0-1.0 range, so platform clamping may differ.</li>
+<li>The active subject catalog has eleven named mappings, while <code>SubjectJingles.all</code> retains seventeen candidate sequences.</li>
+</ul>
+<p>Linux native audio builds may require GStreamer development packages. iOS and macOS builds require macOS and Xcode; Windows builds require a Windows host. Plugin/native changes require a full restart rather than hot reload.</p>
+<h2>Adding A Subject</h2>
+<ol>
+<li>Add a <code>SubjectDefinition</code> to <code>_HomePageState.subjects</code> in <code>home_page.dart</code>.</li>
+<li>Use an existing <code>Note</code> constant for <code>hoverTone</code> and the stored <code>pressJingle</code>.</li>
+<li>Add the exact subject name to <code>SubjectJingles._bySubject</code> and choose a candidate sequence from <code>all</code>.</li>
+<li>Add the exact subject name and topic labels to <code>SubMenu.topicsBySubject</code>.</li>
+<li>Verify the new index gives the intended column and clipper direction.</li>
+<li>Run <code>flutter analyze</code> and the focused tone test. The current tone test checks sample <code>SubjectDefinition</code> values, not the production home-page catalog; extend it when adding catalog-level guarantees.</li>
+</ol>
+<h2>Tests And Current Gaps</h2>
+<p><a href="../../funpedia_user/test/subject_tone_test.dart"><code>subject_tone_test.dart</code></a> checks two locally constructed <code>SubjectDefinition</code> samples for four-note motifs, positive hover frequency, a peak ending for one motif, and difference between the samples. It does not read the production catalog in <code>HomePage</code> or <code>SubjectJingles</code>.</p>
+<p><a href="../../funpedia_user/test/widget_test.dart"><code>widget_test.dart</code></a> is still Flutter&#39;s counter-app starter test. It expects a counter and add icon that the Funpedia UI does not provide, so it is not a valid app smoke test at present.</p>
+<p>Useful next coverage: production subject/motif consistency, home header rendering, card-to-menu navigation, reverse-back behavior, topic actions once implemented, and portrait/landscape layout checks.</p>
+
+<!-- DOCS_CONTENT_END -->
+        </article>
+        <p class="search-empty" id="search-empty">No matching sections or API entries.</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const sourceUrl = './README.md';
+    const documentRoot = document.querySelector('#document');
+    const toc = document.querySelector('#toc');
+    const search = document.querySelector('#search');
+    const searchEmpty = document.querySelector('#search-empty');
+    const slugCounts = new Map();
+
+    function slugify(text) {
+      const base = text.toLowerCase().replace(/<[^>]*>/g, '').replace(/`/g, '')
+        .replace(/[^\p{L}\p{N} _-]/gu, '').trim().replace(/\s+/g, '-');
+      const count = slugCounts.get(base) || 0;
+      slugCounts.set(base, count + 1);
+      return count ? `${base}-${count}` : base;
+    }
+
+    function makeHeadingIds(root) {
+      slugCounts.clear();
+      root.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
+        heading.id = slugify(heading.textContent);
+      });
+    }
+
+    function makeToc(root) {
+      toc.replaceChildren();
+      root.querySelectorAll('h2, h3').forEach((heading) => {
+        const link = document.createElement('a');
+        link.className = 'toc-link';
+        link.dataset.level = heading.tagName === 'H3' ? '3' : '2';
+        link.href = `#${heading.id}`;
+        link.textContent = heading.textContent;
+        link.title = heading.textContent;
+        toc.append(link);
+      });
+    }
+
+    function makeApiEntries(root) {
+      const headings = [...root.querySelectorAll('h4')];
+      if (!headings.length) return;
+      document.body.classList.add('has-api');
+      for (const heading of headings) {
+        const details = document.createElement('details');
+        details.className = 'api-entry';
+        details.id = heading.id;
+        const summary = document.createElement('summary');
+        summary.textContent = heading.textContent;
+        const body = document.createElement('div');
+        body.className = 'api-body';
+        let current = heading.nextElementSibling;
+        while (current && !/^H[1-4]$/.test(current.tagName)) {
+          const next = current.nextElementSibling;
+          body.append(current);
+          current = next;
+        }
+        details.append(summary, body);
+        heading.replaceWith(details);
+      }
+    }
+
+    function decorateLinks(root) {
+      root.querySelectorAll('a[href]').forEach((link) => {
+        const href = link.getAttribute('href');
+        if (href && href.startsWith('http')) {
+          link.target = '_blank';
+          link.rel = 'noopener';
+        }
+      });
+    }
+
+    function filterDocument() {
+      const term = search.value.trim().toLowerCase();
+      const entries = [...documentRoot.querySelectorAll('.api-entry')];
+      for (const entry of entries) {
+        const visible = !term || entry.textContent.toLowerCase().includes(term);
+        entry.hidden = !visible;
+        const tocLink = toc.querySelector(`a[href="#${CSS.escape(entry.id)}"]`);
+        if (tocLink) tocLink.hidden = !visible;
+      }
+
+      const sections = [...documentRoot.querySelectorAll('h2, h3')];
+      for (const heading of sections) {
+        let visible = !term || heading.textContent.toLowerCase().includes(term);
+        let next = heading.nextElementSibling;
+        while (next && !/^H[1-3]$/.test(next.tagName)) {
+          if (!next.hidden && next.textContent.toLowerCase().includes(term)) visible = true;
+          next = next.nextElementSibling;
+        }
+        const tocLink = toc.querySelector(`a[href="#${CSS.escape(heading.id)}"]`);
+        if (tocLink) tocLink.hidden = term !== '' && !visible;
+      }
+      searchEmpty.classList.toggle('visible', term !== '' && !documentRoot.textContent.toLowerCase().includes(term));
+    }
+
+    function initializeDocument() {
+      makeHeadingIds(documentRoot);
+      makeApiEntries(documentRoot);
+      decorateLinks(documentRoot);
+      makeToc(documentRoot);
+      document.body.classList.add('ready');
+      filterDocument();
+      observeHeadings();
+    }
+
+    let headingObserver;
+    function observeHeadings() {
+      headingObserver?.disconnect();
+      headingObserver = new IntersectionObserver((items) => {
+        const visible = items.filter((item) => item.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (!visible) return;
+        toc.querySelectorAll('.active').forEach((link) => link.classList.remove('active'));
+        toc.querySelector(`a[href="#${CSS.escape(visible.target.id)}"]`)?.classList.add('active');
+      }, { rootMargin: '-10% 0px -78% 0px' });
+      documentRoot.querySelectorAll('h2, h3').forEach((heading) => headingObserver.observe(heading));
+    }
+
+    function toggleAll(open) {
+      documentRoot.querySelectorAll('.api-entry').forEach((entry) => {
+        if (!entry.hidden) entry.open = open;
+      });
+      document.querySelector('#expand-toggle').setAttribute('aria-label', open ? 'Collapse all API entries' : 'Expand all API entries');
+      document.querySelector('#expand-toggle').title = open ? 'Collapse all API entries' : 'Expand all API entries';
+    }
+
+    search.addEventListener('input', filterDocument);
+    document.querySelector('#open-api').addEventListener('click', () => toggleAll(true));
+    document.querySelector('#close-api').addEventListener('click', () => toggleAll(false));
+    document.querySelector('#expand-toggle').addEventListener('click', (event) => {
+      const shouldOpen = event.currentTarget.getAttribute('aria-label').startsWith('Expand');
+      toggleAll(shouldOpen);
+    });
+    document.querySelector('#source-link').addEventListener('click', () => window.open(sourceUrl, '_blank', 'noopener'));
+    document.querySelector('#menu-toggle').addEventListener('click', () => document.body.classList.toggle('menu-open'));
+    document.querySelector('#shade').addEventListener('click', () => document.body.classList.remove('menu-open'));
+    toc.addEventListener('click', (event) => {
+      if (event.target.closest('a')) document.body.classList.remove('menu-open');
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        event.preventDefault();
+        search.focus();
+      }
+      if (event.key === 'Escape') {
+        search.value = '';
+        filterDocument();
+        search.blur();
+        document.body.classList.remove('menu-open');
+      }
+    });
+
+    initializeDocument();
+  </script>
+</body>
+</html>

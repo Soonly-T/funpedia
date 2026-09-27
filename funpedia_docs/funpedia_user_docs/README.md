@@ -1,0 +1,756 @@
+# Funpedia User App: Developer Reference
+
+This reference documents the Flutter application in `../../funpedia_user` as it currently exists. API entries come first and use a consistent lookup pattern: symbol and arguments, purpose, then example. The page guide follows the API reference. Placeholder behavior and unused metadata are called out rather than described as finished features.
+
+## Standalone Documentation Page
+
+`index.html` is generated from this Markdown file and can be opened directly in a browser with no local server. After editing this file, regenerate the page from this directory:
+
+```sh
+npm install
+npm run build
+```
+
+The Markdown remains the content source; the generated HTML contains a snapshot of it for `file://` compatibility. The generator dependency is used only while building and is not loaded by the page at runtime.
+
+## Start Here
+
+Run from the Flutter project directory (`../../funpedia_user`):
+
+```sh
+flutter pub get
+flutter run
+```
+
+Useful checks:
+
+```sh
+flutter analyze
+flutter test test/subject_tone_test.dart
+```
+
+The SDK constraint and package versions are in [`pubspec.yaml`](../../funpedia_user/pubspec.yaml). Runtime dependencies used by the app include Flutter, `google_fonts`, and `audioplayers`.
+
+## Source Map
+
+```text
+funpedia_user/
+  lib/
+    main.dart
+    features/home/
+      audio/subject_audio.dart
+      domain/musical_note.dart
+      domain/subject_definition.dart
+      domain/subject_jingles.dart
+      presentation/home_page.dart
+      presentation/subject_menu_page.dart.dart
+      widgets/back_button.dart
+      widgets/subject_card.dart
+  test/
+    subject_tone_test.dart
+    widget_test.dart
+```
+
+`lib/app/` and `lib/core/` currently contain no Dart source files. The feature uses `domain/` for data, `widgets/` for reusable controls, `presentation/` for pages, and `audio/` for generated sound.
+
+## API Reference
+
+### App Bootstrap
+
+#### `main()`
+
+**Arguments:** none.  
+**Purpose:** Starts Flutter with `MyApp` as the root widget.  
+**Example:**
+
+```dart
+void main() {
+  runApp(const MyApp());
+}
+```
+
+#### `MyApp({Key? key})`
+
+**Arguments:** optional widget `key`.  
+**Purpose:** Builds the app-level `MaterialApp`, theme, and initial `HomePage`. The current title values are still the Flutter starter labels.  
+**Example:**
+
+```dart
+const MyApp()
+```
+
+#### `MyApp.build(BuildContext context)`
+
+**Arguments:** `context`, the widget's build context.  
+**Purpose:** Returns a `MaterialApp` using a seeded `ThemeData` and `HomePage`.  
+**Example:**
+
+```dart
+MaterialApp(
+  title: 'Flutter Demo',
+  home: const HomePage(title: 'Flutter Demo Home Page'),
+)
+```
+
+#### `contrastingColor(Color background)`
+
+**Arguments:** `background`, the color to evaluate.  
+**Purpose:** Returns white for a dark background and black otherwise, using Flutter's estimated brightness. This top-level helper is not currently called elsewhere in the app.  
+**Example:**
+
+```dart
+final labelColor = contrastingColor(subject.color);
+```
+
+### Domain Types
+
+#### `MusicalNote(String name, double frequency)`
+
+**Arguments:** `name`, readable pitch label; `frequency`, pitch in hertz.  
+**Purpose:** Immutable value object used by the note catalog, subject definitions, and audio synthesis.  
+**Example:**
+
+```dart
+const note = MusicalNote('C4', 261.63);
+```
+
+#### `MusicalNote.toString()`
+
+**Arguments:** none.  
+**Purpose:** Returns the note's readable `name`.  
+**Example:**
+
+```dart
+print(Note.c4); // C4
+```
+
+#### `Note` constants
+
+**Arguments:** none; constants are referenced by name.  
+**Purpose:** Predefined `MusicalNote` values from `Note.b2` through `Note.d6`, including sharp and flat spellings where defined. Use these constants instead of repeating frequency literals.  
+**Example:**
+
+```dart
+const melody = <MusicalNote>[Note.c4, Note.e4, Note.g4, Note.c5];
+```
+
+#### `SubjectDefinition({...})`
+
+**Arguments:** required named fields `index` (`int`), `name` (`String`), `color` (`Color`), `icon` (`IconData`), `routeName` (`String`), `pressJingle` (`List<MusicalNote>`), and `hoverTone` (`MusicalNote`).  
+**Purpose:** Immutable metadata for a home-page subject card. `index` controls ordering and alternating layout; `routeName` is passed to `SubMenu` but not currently used for navigation. Current card playback looks up the motif in `SubjectJingles` by subject name instead of reading this object's `pressJingle` field.  
+**Example:**
+
+```dart
+const subject = SubjectDefinition(
+  index: 0,
+  name: 'History',
+  color: Color(0xFF8D6E63),
+  icon: Icons.account_balance,
+  routeName: 'history',
+  pressJingle: [Note.d3, Note.a3, Note.fs3, Note.d4],
+  hoverTone: Note.d3,
+);
+```
+
+### Subject Motifs
+
+#### `SubjectJingles.all`
+
+**Arguments:** none.  
+**Purpose:** Static catalog of 17 four-note candidate motifs. The subject mapping below selects entries by index.  
+**Example:**
+
+```dart
+final candidate = SubjectJingles.all.first;
+```
+
+#### `SubjectJingles.forSubject(String subject)`
+
+**Arguments:** `subject`, the exact subject display name.  
+**Purpose:** Returns the mapped motif. Unknown names fall back to `all[0]`; callers should use one of the names defined on `HomePage`.  
+**Example:**
+
+```dart
+final motif = SubjectJingles.forSubject('Physics');
+```
+
+### Home Page Widget
+
+#### `HomePage({Key? key, required String title})`
+
+**Arguments:** optional `key`; required `title`.  
+**Purpose:** Declares the root subject-browser page. The current build does not render `title`.  
+**Example:**
+
+```dart
+const HomePage(title: 'Funpedia')
+```
+
+#### `HomePage.createState()`
+
+**Arguments:** none.  
+**Purpose:** Creates `_HomePageState`, which owns the subject list and `PageController`.  
+**Example:**
+
+```dart
+@override
+State<HomePage> createState() => _HomePageState();
+```
+
+#### `_HomePageState.subjects`
+
+**Arguments:** none.  
+**Purpose:** Static constant list of the eleven subject definitions shown on the home page. It is the source for card order and the portrait/landscape layouts.  
+**Example:**
+
+```dart
+static const subjects = <SubjectDefinition>[
+  SubjectDefinition(
+    index: 0,
+    name: 'History',
+    color: Color(0xFF8D6E63),
+    icon: Icons.account_balance,
+    routeName: 'history',
+    pressJingle: [Note.d3, Note.a3, Note.fs3, Note.d4],
+    hoverTone: Note.d3,
+  ),
+];
+```
+
+#### `_HomePageState.currentPage`
+
+**Arguments:** none.  
+**Purpose:** Mutable integer initialized to `subjects.length * 10000`. It is not currently read or updated by the page.  
+**Example:**
+
+```dart
+int currentPage = subjects.length * 10000;
+```
+
+#### `_HomePageState._pageController`
+
+**Arguments:** none.  
+**Purpose:** Lazily creates a `PageController` with the same large initial page and disposes it with the state. No current `PageView` uses it.  
+**Example:**
+
+```dart
+late final controller = PageController(initialPage: subjects.length * 10000);
+```
+
+#### `_HomePageState.isWideScreen`
+
+**Arguments:** none.  
+**Purpose:** Returns whether the available media height is less than its width. `build` independently computes the same condition for its local layout choice.  
+**Example:**
+
+```dart
+if (isWideScreen) {
+  // Use the two-column subject layout.
+}
+```
+
+#### `_HomePageState.dispose()`
+
+**Arguments:** none.  
+**Purpose:** Disposes the page controller before the state is removed.  
+**Example:**
+
+```dart
+@override
+void dispose() {
+  _pageController.dispose();
+  super.dispose();
+}
+```
+
+#### `_HomePageState.build(BuildContext context)`
+
+**Arguments:** `context`, used to read the available size.  
+**Purpose:** Builds a `Scaffold` with a scrollable header and subject cards. Landscape uses two parity-based columns; portrait uses one list.  
+**Example:**
+
+```dart
+final isWide = MediaQuery.sizeOf(context).height <
+    MediaQuery.sizeOf(context).width;
+```
+
+#### `_HomePageState._buildHeader()`
+
+**Arguments:** none.  
+**Purpose:** Builds the multicolor Funpedia wordmark and learning prompt.  
+**Example:**
+
+```dart
+SelectionArea(child: _buildHeader())
+```
+
+#### `_HomePageState._buildSubjectCard(BuildContext context, SubjectDefinition subject)`
+
+**Arguments:** `context`; `subject`, the metadata passed to the reusable card.  
+**Purpose:** Adapts home-page subject data to `SubjectCard`, including the current wide-layout flag.  
+**Example:**
+
+```dart
+_buildSubjectCard(context, subject)
+```
+
+#### `_HomePageState._buildSubjectColumn(BuildContext context, int columnIndex)`
+
+**Arguments:** `context`; `columnIndex`, either `0` or `1`.  
+**Purpose:** Builds one landscape column from subjects whose index parity matches the requested column.  
+**Example:**
+
+```dart
+_buildSubjectColumn(context, 0)
+```
+
+### Subject Card Widget
+
+#### `SubjectCard({Key? key, required BuildContext context, required SubjectDefinition subject, required bool isWideScreen})`
+
+**Arguments:** optional `key`; required `context`, `subject`, and `isWideScreen`. The widget stores a `BuildContext` field, although navigation in `build` uses its build-time context.  
+**Purpose:** Displays one subject and owns hover/press interaction, audio playback, clipping, and navigation.  
+**Example:**
+
+```dart
+SubjectCard(
+  context: context,
+  subject: subject,
+  isWideScreen: isWideScreen,
+)
+```
+
+#### `SubjectCard.createState()`
+
+**Arguments:** none.  
+**Purpose:** Creates `_SubjectCardState`, which owns pointer flags, the selected motif, hover timer, and audio service.  
+**Example:**
+
+```dart
+@override
+State<SubjectCard> createState() => _SubjectCardState();
+```
+
+#### `_SubjectCardState._playHoverTone()`
+
+**Arguments:** none; reads `widget.subject.hoverTone`.  
+**Purpose:** Debounces pointer-enter audio by 90 ms, then plays the subject's hover note.  
+**Example:**
+
+```dart
+onEnter: (_) {
+  setState(() => _isHovered = true);
+  _playHoverTone();
+}
+```
+
+#### `_SubjectCardState._playPressJingle()`
+
+**Arguments:** none; reads `widget.subject.name`.  
+**Purpose:** Looks up and stores the subject motif from `SubjectJingles`, then starts playback. This runs on pointer-down, before the button's `onPressed`.  
+**Example:**
+
+```dart
+_selectedJingle = SubjectJingles.forSubject(widget.subject.name);
+_audioPlayer.playMelody(_selectedJingle!);
+```
+
+#### `_SubjectCardState.dispose()`
+
+**Arguments:** none.  
+**Purpose:** Cancels a pending hover timer, asynchronously disposes the audio service, then disposes the widget state.  
+**Example:**
+
+```dart
+@override
+void dispose() {
+  _hoverDebounce?.cancel();
+  unawaited(_audioPlayer.dispose());
+  super.dispose();
+}
+```
+
+#### `_SubjectCardState.build(BuildContext context)`
+
+**Arguments:** `context`, used for theme access and route navigation.  
+**Purpose:** Composes pointer handling, scale animation, a responsive custom clipper, and an `ElevatedButton`. Tapping pushes `SubMenu` with a right-to-left slide transition.  
+**Example:**
+
+```dart
+Navigator.of(context).push(
+  PageRouteBuilder<void>(
+    pageBuilder: (context, animation, secondaryAnimation) => nextPage,
+  ),
+);
+```
+
+#### `_TrapezoidClipper({required bool taperRight})`
+
+**Arguments:** `taperRight`, selects the slant direction for portrait cards.  
+**Purpose:** Defines the portrait-card path; edge inset and corner radius are 12 and 16 logical pixels.  
+**Example:**
+
+```dart
+const _TrapezoidClipper(taperRight: true)
+```
+
+#### `_TrapezoidClipper.getClip(Size size)`
+
+**Arguments:** `size`, the card's layout size.  
+**Purpose:** Returns a rounded trapezoid path with the selected taper.  
+**Example:**
+
+```dart
+final path = clipper.getClip(const Size(320, 120));
+```
+
+#### `_TrapezoidClipper.shouldReclip(_TrapezoidClipper oldClipper)`
+
+**Arguments:** `oldClipper`, the previous clipper.  
+**Purpose:** Requests a new clip only when `taperRight` changes.  
+**Example:**
+
+```dart
+return oldClipper.taperRight != taperRight;
+```
+
+#### `_WideParallelogramClipper({required bool droopRight})`
+
+**Arguments:** `droopRight`, selects which side of the wide card slopes downward.  
+**Purpose:** Defines the landscape-card path with a 16 logical-pixel lift and corner radius.  
+**Example:**
+
+```dart
+const _WideParallelogramClipper(droopRight: false)
+```
+
+#### `_WideParallelogramClipper.getClip(Size size)`
+
+**Arguments:** `size`, the card's layout size.  
+**Purpose:** Returns a rounded parallelogram path based on `droopRight`.  
+**Example:**
+
+```dart
+final path = clipper.getClip(const Size(420, 140));
+```
+
+#### `_WideParallelogramClipper.shouldReclip(_WideParallelogramClipper oldClipper)`
+
+**Arguments:** `oldClipper`, the previous clipper.  
+**Purpose:** Requests a new clip only when `droopRight` changes.  
+**Example:**
+
+```dart
+return oldClipper.droopRight != droopRight;
+```
+
+### Back Button Widget
+
+#### `CustomBackButton({Key? key, required bool isWideScreen, required Color color, required List<MusicalNote> pressJingle})`
+
+**Arguments:** optional `key`; `isWideScreen` controls dimensions; `color` sets the surface; `pressJingle` is played in reverse.  
+**Purpose:** Builds the submenu's custom animated back control.  
+**Example:**
+
+```dart
+CustomBackButton(
+  isWideScreen: isWideScreen,
+  color: widget.color,
+  pressJingle: widget.pressJingle,
+)
+```
+
+#### `CustomBackButton.createState()`
+
+**Arguments:** none.  
+**Purpose:** Creates state for hover/press visuals, navigation guard, and audio service.  
+**Example:**
+
+```dart
+@override
+State<CustomBackButton> createState() => _BackButtonState();
+```
+
+#### `_BackButtonState._playReverseJingle()`
+
+**Arguments:** none; reads `widget.pressJingle`.  
+**Purpose:** Plays the incoming subject motif in reverse.  
+**Example:**
+
+```dart
+_audioPlayer.playMelody(widget.pressJingle, reverse: true);
+```
+
+#### `_BackButtonState.dispose()`
+
+**Arguments:** none.  
+**Purpose:** Asynchronously disposes the audio service, then the state.  
+**Example:**
+
+```dart
+@override
+void dispose() {
+  unawaited(_audioPlayer.dispose());
+  super.dispose();
+}
+```
+
+#### `_BackButtonState.build(BuildContext context)`
+
+**Arguments:** `context`, used to pop the current route.  
+**Purpose:** Builds the hover/press animated control. Tap plays the reverse motif and calls `Navigator.pop`; `_isNavigating` prevents repeat pops.  
+**Example:**
+
+```dart
+if (!_isNavigating) {
+  _isNavigating = true;
+  _playReverseJingle();
+  Navigator.pop(context);
+}
+```
+
+### Subject Menu Widget
+
+#### `SubMenu({Key? key, required String subject, required String routeName, required Color color, required IconData icon, required List<MusicalNote> pressJingle})`
+
+**Arguments:** optional `key`; subject display name; `routeName` metadata; subject `color` and `icon`; `pressJingle` for the reverse sound.  
+**Purpose:** Declares the subject detail menu page. `routeName` is currently not read by the page.  
+**Example:**
+
+```dart
+SubMenu(
+  subject: subject.name,
+  routeName: subject.routeName,
+  color: subject.color,
+  icon: subject.icon,
+  pressJingle: motif,
+)
+```
+
+#### `SubMenu.topicsBySubject`
+
+**Arguments:** none.  
+**Purpose:** Static map from exact subject name to visible topic labels. Earth Science currently has eight labels; other subjects have four each.  
+**Example:**
+
+```dart
+final historyTopics = SubMenu.topicsBySubject['History'] ?? const <String>[];
+```
+
+#### `SubMenu.createState()`
+
+**Arguments:** none.  
+**Purpose:** Creates `_SubMenuState` for page composition.  
+**Example:**
+
+```dart
+@override
+State<SubMenu> createState() => _SubMenuState();
+```
+
+#### `_SubMenuState.build(BuildContext context)`
+
+**Arguments:** `context`, used to read dimensions and theme.  
+**Purpose:** Builds the colored subject header, custom back button, and responsive topic grid. Unknown subject names produce an empty topic list. Topic-card `onTap` callbacks are currently empty.  
+**Example:**
+
+```dart
+final topics = SubMenu.topicsBySubject[widget.subject] ?? const <String>[];
+```
+
+### Audio Service
+
+#### `SubjectAudioPlayer()`
+
+**Arguments:** none.  
+**Purpose:** Creates a lightweight service. Each playback method creates its own `AudioPlayer` and disposes it after completion.  
+**Example:**
+
+```dart
+final audio = SubjectAudioPlayer();
+```
+
+#### `SubjectAudioPlayer.playNote(MusicalNote note)`
+
+**Arguments:** `note`, the pitch to synthesize.  
+**Purpose:** Generates and plays one short kalimba-like note at the note volume.  
+**Example:**
+
+```dart
+audio.playNote(Note.c4);
+```
+
+#### `SubjectAudioPlayer.playHoverNote(MusicalNote note)`
+
+**Arguments:** `note`, normally the subject's hover pitch.  
+**Purpose:** Generates and plays one hover sample using the shared UI audio context.  
+**Example:**
+
+```dart
+audio.playHoverNote(subject.hoverTone);
+```
+
+#### `SubjectAudioPlayer._playHoverSample(AudioPlayer player, List<double> samples)`
+
+**Arguments:** `player`, one-shot player; `samples`, normalized mono samples.  
+**Purpose:** Sets hover volume, encodes samples as WAV, waits for completion, then disposes the player in `finally`.  
+**Example:**
+
+```dart
+await _playHoverSample(player, samples);
+```
+
+#### `SubjectAudioPlayer.playMelody(Iterable<MusicalNote> notes, {bool reverse = false})`
+
+**Arguments:** `notes`, pitches to synthesize; optional `reverse`, which plays the sequence backwards. Empty sequences return without playing.  
+**Purpose:** Mixes overlapping note samples into one buffer, smooths it, and plays the result. Notes start 110 ms apart and last 220 ms.  
+**Example:**
+
+```dart
+audio.playMelody(SubjectJingles.forSubject('Physics'));
+audio.playMelody(SubjectJingles.forSubject('Physics'), reverse: true);
+```
+
+#### `SubjectAudioPlayer._smoothMelody(List<double> samples)`
+
+**Arguments:** `samples`, the mixed melody buffer.  
+**Purpose:** Applies a one-pole smoothing filter with a 0.22 coefficient. Empty input is returned unchanged.  
+**Example:**
+
+```dart
+final smoothed = _smoothMelody(mixedSamples);
+```
+
+#### `SubjectAudioPlayer._playOneShot(AudioPlayer player, List<double> samples, {required double volume})`
+
+**Arguments:** `player`; `samples`; required `volume`.  
+**Purpose:** Encodes a buffer, plays it, waits for completion, and disposes the player in `finally`.  
+**Example:**
+
+```dart
+await _playOneShot(player, samples, volume: _melodyVolume);
+```
+
+#### `SubjectAudioPlayer._synthesizeKalimbaNote(double frequency)`
+
+**Arguments:** `frequency`, pitch in hertz.  
+**Purpose:** Produces 240 ms of mono samples using a fundamental tone, quiet harmonics, and attack/decay/release envelopes at 44.1 kHz.  
+**Example:**
+
+```dart
+final samples = _synthesizeKalimbaNote(Note.c4.frequency);
+```
+
+#### `SubjectAudioPlayer._buildWaveBytes(List<double> samples)`
+
+**Arguments:** normalized mono `samples`.  
+**Purpose:** Writes a little-endian, mono, 16-bit PCM WAV buffer at 44.1 kHz and adds 24 ms of silence at both ends.  
+**Example:**
+
+```dart
+final bytes = _buildWaveBytes(samples);
+await player.play(BytesSource(bytes));
+```
+
+#### `SubjectAudioPlayer._isSupported`
+
+**Arguments:** none.  
+**Purpose:** Returns true for Android, iOS, Linux, Windows, and macOS. Playback entry points return early on other platforms. The `dart:io` dependency means web needs a conditional implementation before it can be supported.  
+**Example:**
+
+```dart
+if (!_isSupported) return;
+```
+
+#### `SubjectAudioPlayer._ascii(String value)`
+
+**Arguments:** `value`, an ASCII chunk for a WAV header.  
+**Purpose:** Returns the string's code units as bytes.  
+**Example:**
+
+```dart
+buffer.add(_ascii('RIFF'));
+```
+
+#### `SubjectAudioPlayer._int16(int value)`
+
+**Arguments:** signed integer value.  
+**Purpose:** Encodes the low 16 bits as two little-endian bytes for the WAV header or sample data.  
+**Example:**
+
+```dart
+buffer.add(_int16(bitsPerSample));
+```
+
+#### `SubjectAudioPlayer._int32(int value)`
+
+**Arguments:** integer value.  
+**Purpose:** Encodes 32 bits as four little-endian bytes for WAV sizes and sample rate.  
+**Example:**
+
+```dart
+buffer.add(_int32(sampleRate));
+```
+
+#### `SubjectAudioPlayer.dispose()`
+
+**Arguments:** none.  
+**Purpose:** Returns a completed future; the service holds no persistent player to release. One-shot routines dispose their own players when playback completes.  
+**Example:**
+
+```dart
+await audio.dispose();
+```
+
+## Pages
+
+### Home Page
+
+**Implementation:** [`home_page.dart`](../../funpedia_user/lib/features/home/presentation/home_page.dart)  
+**Widget:** `HomePage`  
+**State owner:** `_HomePageState`
+
+The home page defines eleven subjects in `_HomePageState.subjects`. Portrait uses one vertically scrolling list. Landscape distributes even indices to the first column and odd indices to the second. The breakpoint is orientation-based (`height < width`), not a fixed pixel width.
+
+Each `SubjectDefinition` supplies the card label, icon, color, index, route metadata, stored jingle, and hover note. `SubjectCard` uses the name to look up the played motif in `SubjectJingles`; `SubjectDefinition.pressJingle` is currently not authoritative. When a card is activated, the looked-up motif is passed to `SubMenu` so the back button can reverse the same sequence.
+
+**Interaction flow:** pointer enters card -> 90 ms debounce -> hover note; pointer down -> press motif; button activation -> push `SubMenu` with a 300 ms forward slide; back tap -> reverse motif and pop route.
+
+### Subject Menu Page
+
+**Implementation:** [`subject_menu_page.dart.dart`](../../funpedia_user/lib/features/home/presentation/subject_menu_page.dart.dart)  
+**Widget:** `SubMenu`  
+**State owner:** `_SubMenuState`
+
+The menu header uses the subject color and icon. A `LayoutBuilder` chooses two to six topic columns by available width: below 600 px gives two columns, then three below 900, four below 1200, five below 1600, and six at or above 1600. The back button is excluded from selection; topic labels remain selectable.
+
+Topic cards currently have empty `onTap` handlers. `routeName` is not consumed by the page, so there is no topic detail route yet. Unknown subject keys render no topics.
+
+## Audio And Motif Notes
+
+- Samples are mono 16-bit PCM WAV at 44.1 kHz.
+- Note synthesis uses a fundamental plus two quiet harmonics and an amplitude envelope.
+- Melody notes begin every 110 ms and last 220 ms, creating overlap.
+- `playMelody(..., reverse: true)` reverses note order; it does not reverse the sample waveform.
+- Each sound gets a separate one-shot player. Android/iOS use an audio context configured to mix with other audio.
+- Configured volumes are currently `1.5`; `audioplayers` generally documents volume as a 0.0-1.0 range, so platform clamping may differ.
+- The active subject catalog has eleven named mappings, while `SubjectJingles.all` retains seventeen candidate sequences.
+
+Linux native audio builds may require GStreamer development packages. iOS and macOS builds require macOS and Xcode; Windows builds require a Windows host. Plugin/native changes require a full restart rather than hot reload.
+
+## Adding A Subject
+
+1. Add a `SubjectDefinition` to `_HomePageState.subjects` in `home_page.dart`.
+2. Use an existing `Note` constant for `hoverTone` and the stored `pressJingle`.
+3. Add the exact subject name to `SubjectJingles._bySubject` and choose a candidate sequence from `all`.
+4. Add the exact subject name and topic labels to `SubMenu.topicsBySubject`.
+5. Verify the new index gives the intended column and clipper direction.
+6. Run `flutter analyze` and the focused tone test. The current tone test checks sample `SubjectDefinition` values, not the production home-page catalog; extend it when adding catalog-level guarantees.
+
+## Tests And Current Gaps
+
+[`subject_tone_test.dart`](../../funpedia_user/test/subject_tone_test.dart) checks two locally constructed `SubjectDefinition` samples for four-note motifs, positive hover frequency, a peak ending for one motif, and difference between the samples. It does not read the production catalog in `HomePage` or `SubjectJingles`.
+
+[`widget_test.dart`](../../funpedia_user/test/widget_test.dart) is still Flutter's counter-app starter test. It expects a counter and add icon that the Funpedia UI does not provide, so it is not a valid app smoke test at present.
+
+Useful next coverage: production subject/motif consistency, home header rendering, card-to-menu navigation, reverse-back behavior, topic actions once implemented, and portrait/landscape layout checks.
