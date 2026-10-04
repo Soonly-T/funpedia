@@ -1,5 +1,42 @@
+import 'dart:math' as math;
+
 class MusicalNote {
   const MusicalNote(this.name, this.frequency);
+
+  /// Parses scientific pitch names such as "F#3" or "Bb4" (A4 = 440 Hz).
+  factory MusicalNote.parse(String name) {
+    final match = _namePattern.firstMatch(name.trim());
+    if (match == null) throw FormatException('Invalid note name: "$name"');
+
+    final letter = match.group(1)!.toUpperCase();
+    final accidental = match.group(2)!;
+    final octave = int.parse(match.group(3)!);
+
+    final semitone =
+        _letterSemitones[letter]! +
+        switch (accidental) {
+          '#' => 1,
+          'b' => -1,
+          _ => 0,
+        };
+    final midi = (octave + 1) * 12 + semitone;
+
+    return MusicalNote(
+      '$letter$accidental$octave',
+      440.0 * math.pow(2, (midi - 69) / 12),
+    );
+  }
+
+  static final _namePattern = RegExp(r'^([A-Ga-g])([#b]?)(-?\d+)$');
+  static const _letterSemitones = {
+    'C': 0,
+    'D': 2,
+    'E': 4,
+    'F': 5,
+    'G': 7,
+    'A': 9,
+    'B': 11,
+  };
 
   final String name;
   final double frequency;

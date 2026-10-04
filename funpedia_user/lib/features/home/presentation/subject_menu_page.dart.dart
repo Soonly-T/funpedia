@@ -4,14 +4,14 @@ import 'package:funpedia_user/features/home/domain/musical_note.dart';
 
 class SubMenu extends StatefulWidget {
   final String subject;
-  final String routeName;
+  final String slug;
   final Color color;
   final IconData icon;
   final List<MusicalNote> pressJingle;
   const SubMenu({
     super.key,
     required this.subject,
-    required this.routeName,
+    required this.slug,
     required this.color,
     required this.icon,
     required this.pressJingle,

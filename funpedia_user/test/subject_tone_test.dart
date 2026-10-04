@@ -10,7 +10,7 @@ void main() {
       name: 'History',
       color: Color(0xFF8D6E63),
       icon: Icons.account_balance,
-      routeName: 'history',
+      slug: 'history',
       pressJingle: [Note.c4, Note.e4, Note.g4, Note.c5],
       hoverTone: Note.e5,
     );
@@ -20,7 +20,7 @@ void main() {
       name: 'Geography',
       color: Color(0xFF4FC3F7),
       icon: Icons.public,
-      routeName: 'geography',
+      slug: 'geography',
       pressJingle: [Note.d4, Note.f4, Note.a4, Note.d5],
       hoverTone: Note.f5,
     );

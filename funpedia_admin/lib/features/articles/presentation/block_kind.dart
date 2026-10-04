@@ -41,29 +41,81 @@ enum BlockKind {
 Future<BlockKind?> pickBlockKind(BuildContext context) {
   return showModalBottomSheet<BlockKind>(
     context: context,
+    isScrollControlled: true,
     showDragHandle: true,
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Add a block',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-          ),
-          for (final kind in BlockKind.values)
-            ListTile(
-              leading: Icon(kind.icon),
-              title: Text(kind.label),
-              onTap: () => Navigator.of(sheetContext).pop(kind),
-            ),
-        ],
-      ),
-    ),
+    builder: (sheetContext) => const _BlockKindSheet(),
   );
+}
+
+class _BlockKindSheet extends StatefulWidget {
+  const _BlockKindSheet();
+
+  @override
+  State<_BlockKindSheet> createState() => _BlockKindSheetState();
+}
+
+class _BlockKindSheetState extends State<_BlockKindSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = BlockKind.values
+        .where(
+          (kind) => kind.label.toLowerCase().contains(_query.toLowerCase()),
+        )
+        .toList();
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.72,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Add a block',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                autofocus: true,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  hintText: 'Find a block',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                onChanged: (value) => setState(() => _query = value),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final kind = filtered[index];
+                    return ListTile(
+                      leading: Icon(kind.icon),
+                      title: Text(kind.label),
+                      onTap: () => Navigator.of(context).pop(kind),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

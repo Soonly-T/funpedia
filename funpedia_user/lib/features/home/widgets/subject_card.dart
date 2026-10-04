@@ -187,7 +187,7 @@ class _SubjectCardState extends State<SubjectCard> {
                     pageBuilder: (context, animation, secondaryAnimation) =>
                         SubMenu(
                           subject: subject.name,
-                          routeName: subject.routeName,
+                          slug: subject.slug,
                           color: subject.color,
                           icon: subject.icon,
                           pressJingle: jingle,

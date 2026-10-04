@@ -6,6 +6,41 @@ sealed class ArticleBlock {
   final String id;
 
   Map<String, dynamic> toJson();
+
+  factory ArticleBlock.fromJson(Map<String, dynamic> json) {
+    final id = json['id'] as String;
+    return switch (json['type']) {
+      'paragraph' => ParagraphBlock(
+        id: id,
+        text: json['text'] as String? ?? '',
+      ),
+      'heading' => HeadingBlock(
+        id: id,
+        text: json['text'] as String? ?? '',
+        level: json['level'] as int? ?? 2,
+      ),
+      'image' => ImageBlock(
+        id: id,
+        assetId: json['assetId'] as String? ?? '',
+        caption: json['caption'] as String?,
+      ),
+      'video' => VideoBlock(
+        id: id,
+        assetId: json['assetId'] as String? ?? '',
+        posterAssetId: json['posterAssetId'] as String?,
+      ),
+      'audio' => AudioBlock(id: id, assetId: json['assetId'] as String? ?? ''),
+      'interactive' => InteractiveBlock(
+        id: id,
+        widgetId: json['widgetId'] as String? ?? '',
+        config: Map<String, dynamic>.from(
+          json['config'] as Map<String, dynamic>? ?? const {},
+        ),
+      ),
+      'divider' => DividerBlock(id: id),
+      _ => throw FormatException('Unknown article block type: ${json['type']}'),
+    };
+  }
 }
 
 class ParagraphBlock extends ArticleBlock {
