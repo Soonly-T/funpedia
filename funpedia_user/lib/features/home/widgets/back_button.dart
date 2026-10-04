@@ -10,10 +10,12 @@ class CustomBackButton extends StatefulWidget {
     required this.isWideScreen,
     required this.color,
     required this.pressJingle,
+    this.onBack,
   });
   final bool isWideScreen;
   final Color color;
   final List<MusicalNote> pressJingle;
+  final VoidCallback? onBack;
 
   @override
   State<CustomBackButton> createState() => _BackButtonState();
@@ -38,7 +40,6 @@ class _BackButtonState extends State<CustomBackButton> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(24.0),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) {
@@ -62,7 +63,11 @@ class _BackButtonState extends State<CustomBackButton> {
             if (_isNavigating) return;
             _isNavigating = true;
             _playReverseJingle();
-            Navigator.pop(context);
+            if (widget.onBack case final onBack?) {
+              onBack();
+            } else {
+              Navigator.pop(context);
+            }
           },
           onTapUp: (_) {
             setState(() {
@@ -75,12 +80,12 @@ class _BackButtonState extends State<CustomBackButton> {
             });
           },
           child: AnimatedScale(
-            scale: isHover || isPressed ? 1.1 : 1.0,
+            scale: isHover || isPressed ? 1.05 : 1.0,
             duration: const Duration(milliseconds: 200),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeInOut,
-              width: widget.isWideScreen ? 128 : 96,
+              // width: widget.isWideScreen ? 128 : 96,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16.0),
                 color: widget.color,

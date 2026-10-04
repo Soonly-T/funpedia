@@ -1,13 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:funpedia_user/features/home/widgets/back_button.dart';
 import 'package:funpedia_user/features/home/domain/musical_note.dart';
+import 'package:funpedia_user/features/home/presentation/article_placeholder_page.dart';
+import 'package:funpedia_user/features/home/widgets/back_button.dart';
 
 class SubMenu extends StatefulWidget {
-  final String subject;
-  final String slug;
-  final Color color;
-  final IconData icon;
-  final List<MusicalNote> pressJingle;
   const SubMenu({
     super.key,
     required this.subject,
@@ -16,6 +14,12 @@ class SubMenu extends StatefulWidget {
     required this.icon,
     required this.pressJingle,
   });
+
+  final String subject;
+  final String slug;
+  final Color color;
+  final IconData icon;
+  final List<MusicalNote> pressJingle;
 
   static const topicsBySubject = <String, List<String>>{
     'History': [
@@ -71,138 +75,325 @@ class SubMenu extends StatefulWidget {
 }
 
 class _SubMenuState extends State<SubMenu> {
-  @override
-  Widget build(BuildContext context) {
-    final topics = SubMenu.topicsBySubject[widget.subject] ?? const <String>[];
-    bool isWideScreen =
-        MediaQuery.sizeOf(context).height < MediaQuery.sizeOf(context).width;
+  static const _drawerMaxWidth = 384.0;
+  static const _expandedPanelWidth = 320.0;
+  static const _collapsedPanelWidth = 80.0;
 
-    return Scaffold(
-      // appBar: AppBar(
-      //   leading: IconButton(
-      //     icon: const Icon(Icons.arrow_back, color: Colors.white),
-      //     onPressed: () {
-      //       Navigator.pop(context);
-      //     },
-      //   ),
-      //   title: Text(
-      //     subject,
-      //     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-      //       color: Colors.white,
-      //       fontWeight: FontWeight.w700,
-      //       fontSize: 24,
-      //     ),
-      //   ),
-      //   backgroundColor: color,
-      // ),
-      body: Column(
+  bool _isPanelExpanded = true;
+
+  void _openTopic(String topic) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ArticlePlaceholderPage(
+          subject: widget.subject,
+          topic: topic,
+          color: widget.color,
+          icon: widget.icon,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubjectHeader(
+    BuildContext context, {
+    required bool compact,
+    bool showTitle = true,
+    Widget? action,
+  }) {
+    return Container(
+      height: compact ? 160 : MediaQuery.sizeOf(context).height * 0.26,
+      width: double.infinity,
+      color: widget.color,
+      child: Stack(
         children: [
-          Container(
-            height: isWideScreen
-                ? MediaQuery.sizeOf(context).height * 0.2
-                : MediaQuery.sizeOf(context).height * 0.3,
-            width: MediaQuery.sizeOf(context).width,
-            decoration: BoxDecoration(color: widget.color),
+          Center(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  widget.icon,
-                  color: Colors.white,
-                  size: isWideScreen ? 64 : 32,
-                ),
-                SelectionArea(
-                  child: Text(
-                    widget.subject,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                Icon(widget.icon, color: Colors.white, size: compact ? 56 : 64),
+                if (showTitle)
+                  SelectionArea(
+                    child: Text(
+                      widget.subject,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                final columns = width < 600
-                    ? 2
-                    : width < 900
-                    ? 3
-                    : width < 1200
-                    ? 4
-                    : width < 1600
-                    ? 5
-                    : 6;
+          if (action != null) Positioned(top: 8, left: 8, child: action),
+        ],
+      ),
+    );
+  }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SelectionContainer.disabled(
-                      child: CustomBackButton(
-                        isWideScreen: isWideScreen,
-                        color: widget.color,
-                        pressJingle: widget.pressJingle,
-                      ),
+  Widget _buildTopicNavigation(
+    BuildContext context,
+    List<String> topics, {
+    required bool expanded,
+    required bool inDrawer,
+    VoidCallback? onTogglePanel,
+  }) {
+    return SafeArea(
+      child: Column(
+        children: [
+          if (!inDrawer)
+            _buildSubjectHeader(
+              context,
+              compact: true,
+              showTitle: expanded,
+              action: IconButton(
+                tooltip: expanded
+                    ? 'Collapse topics panel'
+                    : 'Expand topics panel',
+                icon: Icon(
+                  expanded ? Icons.chevron_left : Icons.chevron_right,
+                  color: Colors.white,
+                ),
+                onPressed: onTogglePanel,
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            child: SelectionContainer.disabled(
+              child: expanded
+                  ? CustomBackButton(
+                      isWideScreen: true,
+                      color: widget.color,
+                      pressJingle: widget.pressJingle,
+                      onBack: () {
+                        if (inDrawer) Scaffold.of(context).closeDrawer();
+                        Navigator.of(context).pop();
+                      },
+                    )
+                  : IconButton(
+                      tooltip: 'Back',
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
-                    Expanded(
-                      child: GridView.builder(
-                        padding: const EdgeInsets.all(20),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount: topics.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            color: widget.color,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: () {},
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      widget.icon,
-                                      color: Colors.white,
-                                      size: 36,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    SelectionArea(
-                                      child: Text(
-                                        topics[index],
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+            ),
+          ),
+          Expanded(
+            child: ListView.separated(
+              padding: EdgeInsets.fromLTRB(
+                expanded ? 12 : 8,
+                8,
+                expanded ? 12 : 8,
+                20,
+              ),
+              itemCount: topics.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 4),
+              itemBuilder: (context, index) {
+                final topic = topics[index];
+                final content = expanded
+                    ? Row(
+                        children: [
+                          Icon(widget.icon, color: Colors.white),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              topic,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ],
+                      )
+                    : Center(
+                        child: Tooltip(
+                          message: topic,
+                          child: Icon(widget.icon, color: Colors.white),
+                        ),
+                      );
+                return Card(
+                  color: widget.color,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      if (inDrawer) Navigator.of(context).pop();
+                      _openTopic(topic);
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: expanded ? 12 : 8,
+                        vertical: 14,
                       ),
+                      child: content,
                     ),
-                  ],
+                  ),
                 );
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTopicGrid(List<String> topics) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const tileSize = 128.0;
+        const gap = 12.0;
+        const padding = 20.0;
+        const labelHeight = 48.0;
+        const labelGap = 8.0;
+        const rowExtent = tileSize + labelGap + labelHeight;
+        final usableWidth = math.max(0.0, constraints.maxWidth - 2 * padding);
+        final columns = math
+            .max(1, ((usableWidth + gap) / (tileSize + gap)).floor())
+            .toInt();
+        final rowCount = (topics.length / columns).ceil();
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(padding),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: gap,
+            mainAxisSpacing: gap,
+            mainAxisExtent: rowExtent,
+          ),
+          itemCount: rowCount * columns,
+          itemBuilder: (context, index) {
+            if (index >= topics.length) return const SizedBox.shrink();
+
+            return Center(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => _openTopic(topics[index]),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox.square(
+                      dimension: tileSize,
+                      child: Card(
+                        margin: EdgeInsets.zero,
+                        elevation: 2,
+                        color: widget.color,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Center(
+                          child: Container(
+                            width: 68,
+                            height: 68,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.description_outlined,
+                              color: Colors.white,
+                              size: 36,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: labelGap),
+                    SizedBox(
+                      height: labelHeight,
+                      child: Center(
+                        child: SelectionArea(
+                          child: Text(
+                            topics[index],
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topics = SubMenu.topicsBySubject[widget.subject] ?? const <String>[];
+    final screenSize = MediaQuery.sizeOf(context);
+    final isWideScreen = screenSize.width > screenSize.height;
+
+    return Scaffold(
+      drawer: isWideScreen
+          ? null
+          : Drawer(
+              width: math.min(screenSize.width, _drawerMaxWidth),
+              child: Builder(
+                builder: (drawerContext) => _buildTopicNavigation(
+                  drawerContext,
+                  topics,
+                  expanded: true,
+                  inDrawer: true,
+                ),
+              ),
+            ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (isWideScreen)
+              Expanded(
+                child: Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeInOut,
+                      width: _isPanelExpanded
+                          ? _expandedPanelWidth
+                          : _collapsedPanelWidth,
+                      child: _buildTopicNavigation(
+                        context,
+                        topics,
+                        expanded: _isPanelExpanded,
+                        inDrawer: false,
+                        onTogglePanel: () => setState(
+                          () => _isPanelExpanded = !_isPanelExpanded,
+                        ),
+                      ),
+                    ),
+                    const VerticalDivider(width: 1),
+                    Expanded(child: _buildTopicGrid(topics)),
+                  ],
+                ),
+              )
+            else ...[
+              _buildSubjectHeader(
+                context,
+                compact: false,
+                action: Builder(
+                  builder: (buttonContext) => IconButton(
+                    tooltip: 'Open topics',
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () => Scaffold.of(buttonContext).openDrawer(),
+                  ),
+                ),
+              ),
+              Expanded(child: _buildTopicGrid(topics)),
+            ],
+          ],
+        ),
       ),
     );
   }
