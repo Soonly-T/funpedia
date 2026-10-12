@@ -438,7 +438,7 @@ flutter test test/subject_tone_test.dart
     subject_tone_test.dart
     widget_test.dart
 </code></pre>
-<p><code>lib/app/</code> and <code>lib/core/</code> currently contain no Dart source files. The feature uses <code>domain/</code> for data, <code>widgets/</code> for reusable controls, <code>presentation/</code> for pages, and <code>audio/</code> for generated sound.</p>
+<p><code>lib/core/layout/screen_tier.dart</code> holds the shared width breakpoints (see Screen Tiers). <code>lib/core/layout/breakpoints.dart</code> is an unused leftover. <code>lib/app/</code> contains no Dart source files. The feature uses <code>domain/</code> for data, <code>widgets/</code> for reusable controls, <code>presentation/</code> for pages, and <code>audio/</code> for generated sound.</p>
 <h2>API Reference</h2>
 <h3>App Bootstrap</h3>
 <h4><code>main()</code></h4>
@@ -498,6 +498,22 @@ flutter test test/subject_tone_test.dart
 <p><strong>Arguments:</strong> <code>subject</code>, the exact subject display name.<br><strong>Purpose:</strong> Returns the mapped motif. Unknown names fall back to <code>all[0]</code>; callers should use one of the names defined on <code>HomePage</code>.<br><strong>Example:</strong></p>
 <pre><code class="language-dart">final motif = SubjectJingles.forSubject(&#39;Physics&#39;);
 </code></pre>
+<h3>Screen Tiers</h3>
+<p><strong>Implementation:</strong> <a href="../../funpedia_user/lib/core/layout/screen_tier.dart"><code>screen_tier.dart</code></a></p>
+<h4><code>tierForWidth(double width)</code></h4>
+<p><strong>Arguments:</strong> <code>width</code>, in logical pixels.
+<strong>Purpose:</strong> Returns 0 below 600, 1 below 900, 2 below 1200, 3 below 1600, and 4 above, using <code>screenBreakpoints</code>.
+<strong>Example:</strong></p>
+<pre><code class="language-dart">final tier = tierForWidth(1000); // 2
+</code></pre>
+<h4><code>BuildContext.screenTier</code> and <code>BuildContext.isWideScreen</code></h4>
+<p><strong>Arguments:</strong> none; extension getters on <code>BuildContext</code>.
+<strong>Purpose:</strong> <code>screenTier</code> applies <code>tierForWidth</code> to the current media width. <code>isWideScreen</code> is <code>screenTier &gt;= 2</code>. Import <code>screen_tier.dart</code> to use them.
+<strong>Example:</strong></p>
+<pre><code class="language-dart">if (context.isWideScreen) {
+  // Wide layout.
+}
+</code></pre>
 <h3>Home Page Widget</h3>
 <h4><code>HomePage({Key? key, required String title})</code></h4>
 <p><strong>Arguments:</strong> optional <code>key</code>; required <code>title</code>.<br><strong>Purpose:</strong> Declares the root subject-browser page. The current build does not render <code>title</code>.<br><strong>Example:</strong></p>
@@ -532,7 +548,8 @@ State&lt;HomePage&gt; createState() =&gt; _HomePageState();
 <pre><code class="language-dart">late final controller = PageController(initialPage: subjects.length * 10000);
 </code></pre>
 <h4><code>_HomePageState.isWideScreen</code></h4>
-<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Returns whether the available media height is less than its width. <code>build</code> independently computes the same condition for its local layout choice.<br><strong>Example:</strong></p>
+<p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Delegates to <code>context.isWideScreen</code> (see Screen Tiers), which is true at 900 logical pixels of width or more.
+<strong>Example:</strong></p>
 <pre><code class="language-dart">if (isWideScreen) {
   // Use the two-column subject layout.
 }
@@ -546,9 +563,9 @@ void dispose() {
 }
 </code></pre>
 <h4><code>_HomePageState.build(BuildContext context)</code></h4>
-<p><strong>Arguments:</strong> <code>context</code>, used to read the available size.<br><strong>Purpose:</strong> Builds a <code>Scaffold</code> with a scrollable header and subject cards. Landscape uses two parity-based columns; portrait uses one list.<br><strong>Example:</strong></p>
-<pre><code class="language-dart">final isWide = MediaQuery.sizeOf(context).height &lt;
-    MediaQuery.sizeOf(context).width;
+<p><strong>Arguments:</strong> <code>context</code>, used to read the available size.<br><strong>Purpose:</strong> Builds a <code>Scaffold</code> with a scrollable header and subject cards. Wide screens use two parity-based columns with a reserved center area; narrow screens use one list.
+<strong>Example:</strong></p>
+<pre><code class="language-dart">final isWide = context.isWideScreen;
 </code></pre>
 <h4><code>_HomePageState._buildHeader()</code></h4>
 <p><strong>Arguments:</strong> none.<br><strong>Purpose:</strong> Builds the multicolor Funpedia wordmark and learning prompt.<br><strong>Example:</strong></p>
@@ -751,7 +768,7 @@ await player.play(BytesSource(bytes));
 <h2>Pages</h2>
 <h3>Home Page</h3>
 <p><strong>Implementation:</strong> <a href="../../funpedia_user/lib/features/home/presentation/home_page.dart"><code>home_page.dart</code></a><br><strong>Widget:</strong> <code>HomePage</code><br><strong>State owner:</strong> <code>_HomePageState</code></p>
-<p>The home page currently defines twelve subjects in <code>_HomePageState.subjects</code>. Portrait uses one vertically scrolling list. Landscape distributes even indices to the first column and odd indices to the second. The breakpoint is orientation-based (<code>height &lt; width</code>), not a fixed pixel width.</p>
+<p>The home page currently defines twelve subjects in <code>_HomePageState.subjects</code>. Portrait uses one vertically scrolling list. Wide screens distribute even indices to the first column and odd indices to the second, with the columns pushed to the edges and an empty center area (flex 4 : 3 : 4) reserved for a future box. The breakpoint is width-based (<code>context.isWideScreen</code>, 900 px), not orientation-based.</p>
 <p>Each <code>SubjectDefinition</code> supplies the card label, icon, color, index, slug, stored jingle, and hover note. <code>SubjectCard</code> uses the name to look up the played motif in <code>SubjectJingles</code>; <code>SubjectDefinition.pressJingle</code> is currently not authoritative. When a card is activated, the looked-up motif is passed to <code>SubMenu</code> so the back button can reverse the same sequence. <code>slug</code> is stable content identity, but is not yet used for URL routing.</p>
 <p><strong>Interaction flow:</strong> pointer enters card -&gt; 90 ms debounce -&gt; hover note; pointer down -&gt; press motif; button activation -&gt; push <code>SubMenu</code> with a 300 ms forward slide; back tap -&gt; reverse motif and pop route.</p>
 <h3>Subject Menu Page</h3>

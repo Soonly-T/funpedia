@@ -94,7 +94,7 @@ funpedia_user/
     widget_test.dart
 ```
 
-`lib/app/` and `lib/core/` currently contain no Dart source files. The feature uses `domain/` for data, `widgets/` for reusable controls, `presentation/` for pages, and `audio/` for generated sound.
+`lib/core/layout/screen_tier.dart` holds the shared width breakpoints (see Screen Tiers). `lib/core/layout/breakpoints.dart` is an unused leftover. `lib/app/` contains no Dart source files. The feature uses `domain/` for data, `widgets/` for reusable controls, `presentation/` for pages, and `audio/` for generated sound.
 
 ## API Reference
 
@@ -217,6 +217,32 @@ final candidate = SubjectJingles.all.first;
 final motif = SubjectJingles.forSubject('Physics');
 ```
 
+### Screen Tiers
+
+**Implementation:** [`screen_tier.dart`](../../funpedia_user/lib/core/layout/screen_tier.dart)
+
+#### `tierForWidth(double width)`
+
+**Arguments:** `width`, in logical pixels.
+**Purpose:** Returns 0 below 600, 1 below 900, 2 below 1200, 3 below 1600, and 4 above, using `screenBreakpoints`.
+**Example:**
+
+```dart
+final tier = tierForWidth(1000); // 2
+```
+
+#### `BuildContext.screenTier` and `BuildContext.isWideScreen`
+
+**Arguments:** none; extension getters on `BuildContext`.
+**Purpose:** `screenTier` applies `tierForWidth` to the current media width. `isWideScreen` is `screenTier >= 2`. Import `screen_tier.dart` to use them.
+**Example:**
+
+```dart
+if (context.isWideScreen) {
+  // Wide layout.
+}
+```
+
 ### Home Page Widget
 
 #### `HomePage({Key? key, required String title})`
@@ -283,7 +309,7 @@ late final controller = PageController(initialPage: subjects.length * 10000);
 #### `_HomePageState.isWideScreen`
 
 **Arguments:** none.  
-**Purpose:** Returns whether the available media height is less than its width. `build` independently computes the same condition for its local layout choice.  
+**Purpose:** Delegates to `context.isWideScreen` (see Screen Tiers), which is true at 900 logical pixels of width or more.
 **Example:**
 
 ```dart
@@ -309,12 +335,11 @@ void dispose() {
 #### `_HomePageState.build(BuildContext context)`
 
 **Arguments:** `context`, used to read the available size.  
-**Purpose:** Builds a `Scaffold` with a scrollable header and subject cards. Landscape uses two parity-based columns; portrait uses one list.  
+**Purpose:** Builds a `Scaffold` with a scrollable header and subject cards. Wide screens use two parity-based columns with a reserved center area; narrow screens use one list.
 **Example:**
 
 ```dart
-final isWide = MediaQuery.sizeOf(context).height <
-    MediaQuery.sizeOf(context).width;
+final isWide = context.isWideScreen;
 ```
 
 #### `_HomePageState._buildHeader()`
@@ -753,7 +778,7 @@ await audio.dispose();
 **Widget:** `HomePage`  
 **State owner:** `_HomePageState`
 
-The home page currently defines twelve subjects in `_HomePageState.subjects`. Portrait uses one vertically scrolling list. Landscape distributes even indices to the first column and odd indices to the second. The breakpoint is orientation-based (`height < width`), not a fixed pixel width.
+The home page currently defines twelve subjects in `_HomePageState.subjects`. Portrait uses one vertically scrolling list. Wide screens distribute even indices to the first column and odd indices to the second, with the columns pushed to the edges and an empty center area (flex 4 : 3 : 4) reserved for a future box. The breakpoint is width-based (`context.isWideScreen`, 900 px), not orientation-based.
 
 Each `SubjectDefinition` supplies the card label, icon, color, index, slug, stored jingle, and hover note. `SubjectCard` uses the name to look up the played motif in `SubjectJingles`; `SubjectDefinition.pressJingle` is currently not authoritative. When a card is activated, the looked-up motif is passed to `SubMenu` so the back button can reverse the same sequence. `slug` is stable content identity, but is not yet used for URL routing.
 
