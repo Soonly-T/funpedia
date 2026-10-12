@@ -1,6 +1,5 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
+import 'package:funpedia_user/core/layout/screen_tier.dart';
 import 'package:funpedia_user/features/home/domain/musical_note.dart';
 import 'package:funpedia_user/features/home/domain/subject_definition.dart';
 import 'package:funpedia_user/features/home/widgets/subject_card.dart';
@@ -133,8 +132,7 @@ class _HomePageState extends State<HomePage> {
     viewportFraction: 1,
   );
 
-  bool get isWideScreen =>
-      MediaQuery.sizeOf(context).height < MediaQuery.sizeOf(context).width;
+  bool get isWideScreen => context.isWideScreen;
 
   @override
   void dispose() {
@@ -150,8 +148,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isWideScreen =
-        MediaQuery.sizeOf(context).height < MediaQuery.sizeOf(context).width;
+    final isWideScreen = context.isWideScreen;
 
     return Scaffold(
       // appBar: AppBar(
@@ -170,23 +167,15 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
+                        flex: 4,
                         child: SelectionArea(
                           child: _buildSubjectColumn(context, 0),
                         ),
                       ),
-                      SizedBox(
-                        width:
-                            math
-                                .pow(
-                                  MediaQuery.sizeOf(context).width /
-                                      MediaQuery.sizeOf(context).height,
-                                  1.95,
-                                )
-                                .toDouble() *
-                            0.5 *
-                            400,
-                      ),
+                      // Reserved center area for the upcoming box.
+                      const Expanded(flex: 3, child: SizedBox.shrink()),
                       Expanded(
+                        flex: 4,
                         child: SelectionArea(
                           child: _buildSubjectColumn(context, 1),
                         ),

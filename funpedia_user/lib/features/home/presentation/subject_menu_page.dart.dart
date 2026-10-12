@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:funpedia_user/core/layout/screen_tier.dart';
 import 'package:funpedia_user/features/home/domain/musical_note.dart';
 import 'package:funpedia_user/features/home/presentation/article_placeholder_page.dart';
 import 'package:funpedia_user/features/home/widgets/back_button.dart';
@@ -75,11 +78,17 @@ class SubMenu extends StatefulWidget {
 }
 
 class _SubMenuState extends State<SubMenu> {
+  String _searchQuery = '';
+  bool _isReversed = false;
+
   static const _drawerMaxWidth = 384.0;
   static const _expandedPanelWidth = 320.0;
   static const _collapsedPanelWidth = 80.0;
 
   bool _isPanelExpanded = true;
+
+  get isDesktop =>
+      !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
 
   void _openTopic(String topic) {
     Navigator.of(context).push(
@@ -142,21 +151,7 @@ class _SubMenuState extends State<SubMenu> {
       child: Column(
         children: [
           if (!inDrawer)
-            _buildSubjectHeader(
-              context,
-              compact: true,
-              showTitle: expanded,
-              action: IconButton(
-                tooltip: expanded
-                    ? 'Collapse topics panel'
-                    : 'Expand topics panel',
-                icon: Icon(
-                  expanded ? Icons.chevron_left : Icons.chevron_right,
-                  color: Colors.white,
-                ),
-                onPressed: onTogglePanel,
-              ),
-            ),
+            _buildSubjectHeader(context, compact: true, showTitle: expanded),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
             child: SelectionContainer.disabled(
@@ -240,9 +235,13 @@ class _SubMenuState extends State<SubMenu> {
     );
   }
 
-  Widget _buildTopicGrid(List<String> topics) {
+  Widget _buildArticleGrid(List<String> topics) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final query = _searchQuery.trim().toLowerCase();
+        final filteredTopics = topics
+            .where((topic) => topic.toLowerCase().contains(query))
+            .toList();
         const tileSize = 128.0;
         const gap = 12.0;
         const padding = 20.0;
@@ -253,7 +252,7 @@ class _SubMenuState extends State<SubMenu> {
         final columns = math
             .max(1, ((usableWidth + gap) / (tileSize + gap)).floor())
             .toInt();
-        final rowCount = (topics.length / columns).ceil();
+        final rowCount = (filteredTopics.length / columns).ceil();
 
         return GridView.builder(
           padding: const EdgeInsets.all(padding),
@@ -265,65 +264,67 @@ class _SubMenuState extends State<SubMenu> {
           ),
           itemCount: rowCount * columns,
           itemBuilder: (context, index) {
-            if (index >= topics.length) return const SizedBox.shrink();
+            if (index >= filteredTopics.length) return const SizedBox.shrink();
 
-            return Center(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => _openTopic(topics[index]),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox.square(
-                      dimension: tileSize,
-                      child: Card(
-                        margin: EdgeInsets.zero,
-                        elevation: 2,
-                        color: widget.color,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+            {
+              return Center(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _openTopic(filteredTopics[index]),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox.square(
+                        dimension: tileSize,
+                        child: Card(
+                          margin: EdgeInsets.zero,
+                          elevation: 2,
+                          color: widget.color,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Center(
+                            child: Container(
+                              width: 68,
+                              height: 68,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Icon(
+                                Icons.description_outlined,
+                                color: Colors.white,
+                                size: 36,
+                              ),
+                            ),
+                          ),
                         ),
-                        clipBehavior: Clip.antiAlias,
+                      ),
+                      const SizedBox(height: labelGap),
+                      SizedBox(
+                        height: labelHeight,
                         child: Center(
-                          child: Container(
-                            width: 68,
-                            height: 68,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Icon(
-                              Icons.description_outlined,
-                              color: Colors.white,
-                              size: 36,
+                          child: SelectionArea(
+                            child: Text(
+                              filteredTopics[index],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: labelGap),
-                    SizedBox(
-                      height: labelHeight,
-                      child: Center(
-                        child: SelectionArea(
-                          child: Text(
-                            topics[index],
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
+              );
+            }
           },
         );
       },
@@ -334,7 +335,7 @@ class _SubMenuState extends State<SubMenu> {
   Widget build(BuildContext context) {
     final topics = SubMenu.topicsBySubject[widget.subject] ?? const <String>[];
     final screenSize = MediaQuery.sizeOf(context);
-    final isWideScreen = screenSize.width > screenSize.height;
+    final isWideScreen = context.isWideScreen;
 
     return Scaffold(
       drawer: isWideScreen
@@ -374,7 +375,76 @@ class _SubMenuState extends State<SubMenu> {
                       ),
                     ),
                     const VerticalDivider(width: 1),
-                    Expanded(child: _buildTopicGrid(topics)),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          if (isDesktop == true)
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                spacing: 16,
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _searchQuery = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        hintText: 'Search...',
+                                        prefixIcon: Icon(Icons.search),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8.0,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 48,
+                                    width: 48,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.black,
+
+                                          width: 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          8.0,
+                                        ),
+                                      ),
+                                      child: IconButton(
+                                        icon: _isReversed
+                                            ? Icon(Icons.sort)
+                                            : Icon(Icons.sort_by_alpha),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: Colors.transparent,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadiusGeometry.circular(
+                                                  8,
+                                                ),
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isReversed = !_isReversed;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          Expanded(child: _buildArticleGrid(topics)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               )
@@ -390,7 +460,7 @@ class _SubMenuState extends State<SubMenu> {
                   ),
                 ),
               ),
-              Expanded(child: _buildTopicGrid(topics)),
+              Expanded(child: _buildArticleGrid(topics)),
             ],
           ],
         ),
